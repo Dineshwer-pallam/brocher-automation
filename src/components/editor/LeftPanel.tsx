@@ -86,7 +86,8 @@ export default function LeftPanel({ canvas }: { canvas: fabric.Canvas | null }) 
       canvas.renderAll();
     } else if (type === 'image' || type === 'circle') {
       const placeholderImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23cccccc'/%3E%3C/svg%3E";
-      fabric.Image.fromURL(placeholderImg).then(img => {
+      fabric.Image.fromURL(placeholderImg, (img) => {
+        if (!img) return;
         img.set({ left: cx, top: cy, dataKey } as any);
         if (type === 'circle') {
           const circ = new fabric.Circle({ radius: 50, originX: 'center', originY: 'center' });

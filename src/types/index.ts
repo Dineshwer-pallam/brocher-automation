@@ -17,6 +17,18 @@ export interface PropertyData {
   address: string;
   description: string;
   highlights: string[];
+  buildingInfo: string;
+  entranceHall: string;
+  kitchenLounge: string;
+  bedroomOne: string;
+  enSuite: string;
+  bedroomTwo: string;
+  bathroomDetails: string;
+  externally: string;
+  additionalInfo: string;
+  agentsNotes: string;
+  disclaimer: string;
+  viewingArrangements: string;
   images: PropertyImage[];
   agent: {
     name: string;
@@ -29,6 +41,7 @@ export interface PropertyData {
     name: string;
     logoUrl: string;
     logoFile?: File;
+    website: string;
   };
 }
 

@@ -1,10 +1,13 @@
 "use client";
 
 import { useAppStore } from '@/lib/store';
+import { templates } from '@/lib/templates';
 import { Minus, Plus, Maximize2, Grid3X3, Magnet } from 'lucide-react';
 
 export default function BottomBar() {
   const store = useAppStore();
+  const template = templates.find(t => t.id === store.selectedTemplateId);
+  const totalPages = template ? template.pages.length : 1;
 
   const handleZoom = (delta: number) => {
     let z = store.zoom + delta;
@@ -27,19 +30,16 @@ export default function BottomBar() {
       </div>
 
       {/* Pages */}
-      <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-md">
-        <button 
-          onClick={() => store.setPage(1)}
-          className={`px-3 py-1 text-xs rounded-sm font-medium transition-colors ${store.currentPage === 1 ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          Page 1
-        </button>
-        <button 
-          onClick={() => store.setPage(2)} // We'll only show this if template has 2 pages in page.tsx technically, but safe to leave
-          className={`px-3 py-1 text-xs rounded-sm font-medium transition-colors ${store.currentPage === 2 ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          Page 2
-        </button>
+      <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-md overflow-x-auto max-w-[50vw]">
+        {Array.from({ length: totalPages }).map((_, i) => (
+          <button 
+            key={i}
+            onClick={() => store.setPage(i + 1)}
+            className={`px-3 py-1 text-xs rounded-sm font-medium transition-colors whitespace-nowrap ${store.currentPage === i + 1 ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Page {i + 1}
+          </button>
+        ))}
       </div>
 
       {/* Toggles */}

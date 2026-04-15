@@ -27,6 +27,19 @@ const formSchema = z.object({
   agentPhone: z.string().optional(),
   agentEmail: z.string().email('Invalid email').or(z.literal('')),
   companyName: z.string().optional(),
+  companyWebsite: z.string().optional(),
+  buildingInfo: z.string().optional(),
+  entranceHall: z.string().optional(),
+  kitchenLounge: z.string().optional(),
+  bedroomOne: z.string().optional(),
+  enSuite: z.string().optional(),
+  bedroomTwo: z.string().optional(),
+  bathroomDetails: z.string().optional(),
+  externally: z.string().optional(),
+  additionalInfo: z.string().optional(),
+  agentsNotes: z.string().optional(),
+  disclaimer: z.string().optional(),
+  viewingArrangements: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -81,6 +94,19 @@ export default function CreatePropertyPage() {
       agentPhone: store.propertyData.agent.phone,
       agentEmail: store.propertyData.agent.email,
       companyName: store.propertyData.company.name,
+      companyWebsite: store.propertyData.company.website,
+      buildingInfo: store.propertyData.buildingInfo,
+      entranceHall: store.propertyData.entranceHall,
+      kitchenLounge: store.propertyData.kitchenLounge,
+      bedroomOne: store.propertyData.bedroomOne,
+      enSuite: store.propertyData.enSuite,
+      bedroomTwo: store.propertyData.bedroomTwo,
+      bathroomDetails: store.propertyData.bathroomDetails,
+      externally: store.propertyData.externally,
+      additionalInfo: store.propertyData.additionalInfo,
+      agentsNotes: store.propertyData.agentsNotes,
+      disclaimer: store.propertyData.disclaimer,
+      viewingArrangements: store.propertyData.viewingArrangements,
     }
   });
 
@@ -101,7 +127,20 @@ export default function CreatePropertyPage() {
         agentName: 'Sarah Jenkins',
         agentPhone: '+1 (555) 123-4567',
         agentEmail: 'sarah@luxuryestates.com',
-        companyName: 'Luxury Estates International'
+        companyName: 'Luxury Estates International',
+        companyWebsite: 'www.luxuryestates.com',
+        buildingInfo: 'A stunning modern development situated in the heart of the city.',
+        entranceHall: 'Grand entrance foyer with double-height ceilings and marble flooring.',
+        kitchenLounge: 'Open-concept luxury kitchen with integrated appliances and panoramic views.',
+        bedroomOne: 'Spacious master suite featuring floor-to-ceiling windows and custom closets.',
+        enSuite: 'Luxurious spa-like en-suite bathroom with dual vanities and soaking tub.',
+        bedroomTwo: 'Generous second bedroom with ample natural light and built-in storage.',
+        bathroomDetails: 'Modern family bathroom with high-end fixtures and rain shower.',
+        externally: 'Private landscaped gardens with an infinity edge pool and dining terrace.',
+        additionalInfo: 'Property features smart home integration and central air conditioning.',
+        agentsNotes: 'A rare opportunity to acquire a property of this caliber in this location.',
+        disclaimer: 'All measurements are approximate and for display purposes only.',
+        viewingArrangements: 'Viewing strictly by appointment through Luxury Estates International.'
       };
       
       Object.entries(demoData).forEach(([k, v]) => setValue(k as any, v, { shouldValidate: true }));
@@ -114,10 +153,18 @@ export default function CreatePropertyPage() {
         try {
           // Fetch placehold.co images and create Files
           const urls = [
-            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-            'https://images.unsplash.com/photo-1600607687930-cef5694d11cf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-            'https://images.unsplash.com/photo-1600566753086-00f18efc2291?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80'
+            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80', // hero
+            'https://images.unsplash.com/photo-1600607687930-cef5694d11cf?w=800&q=80', // gal 1
+            'https://images.unsplash.com/photo-1600566753086-00f18efc2291?w=800&q=80', // gal 2
+            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80', // gal 3
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80', // gal 4
+            'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&q=80', // gal 5
+            'https://images.unsplash.com/photo-1600563438938-a9a27216b3f5?w=800&q=80', // gal 6
+            'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800&q=80', // gal 7
+            'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=800&q=80', // gal 8
+            'https://images.unsplash.com/photo-1541888048600-50d4fbb11ad9?w=800&q=80', // epc_2
+            'https://images.unsplash.com/photo-1555529733-0e670560f4e1?w=800&q=80', // epc_1
+            'https://images.unsplash.com/photo-1600607688969-a5bfcd20fa77?w=800&q=80'  // floorplan
           ];
           for (let i = 0; i < urls.length; i++) {
              const res = await fetch(urls[i]);
@@ -131,8 +178,15 @@ export default function CreatePropertyPage() {
       };
       
       if (store.propertyData.images.length === 0) mockImagesAsync();
+      
+      if (!store.propertyData.agent.photoUrl) {
+        store.setNestedProperty('agent', 'photoUrl', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80');
+      }
+      if (!store.propertyData.company.logoUrl) {
+        store.setNestedProperty('company', 'logoUrl', 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png');
+      }
     }
-  }, [isDemo, setValue]);
+  }, [isDemo, setValue, store]);
 
   const onSubmit = (data: FormData) => {
     store.setProperty('title', data.title);
@@ -146,12 +200,25 @@ export default function CreatePropertyPage() {
     store.setProperty('address', data.address);
     store.setProperty('description', data.description);
     store.setProperty('highlights', highlights);
+    store.setProperty('buildingInfo', data.buildingInfo || '');
+    store.setProperty('entranceHall', data.entranceHall || '');
+    store.setProperty('kitchenLounge', data.kitchenLounge || '');
+    store.setProperty('bedroomOne', data.bedroomOne || '');
+    store.setProperty('enSuite', data.enSuite || '');
+    store.setProperty('bedroomTwo', data.bedroomTwo || '');
+    store.setProperty('bathroomDetails', data.bathroomDetails || '');
+    store.setProperty('externally', data.externally || '');
+    store.setProperty('additionalInfo', data.additionalInfo || '');
+    store.setProperty('agentsNotes', data.agentsNotes || '');
+    store.setProperty('disclaimer', data.disclaimer || '');
+    store.setProperty('viewingArrangements', data.viewingArrangements || '');
     
     store.setNestedProperty('agent', 'name', data.agentName);
     store.setNestedProperty('agent', 'phone', data.agentPhone || '');
     store.setNestedProperty('agent', 'email', data.agentEmail || '');
     
     store.setNestedProperty('company', 'name', data.companyName || '');
+    store.setNestedProperty('company', 'website', data.companyWebsite || '');
 
     router.push('/templates');
   };
@@ -173,7 +240,7 @@ export default function CreatePropertyPage() {
   // Image Dropzone
   const onDrop = (acceptedFiles: File[]) => {
     acceptedFiles.forEach(file => {
-      if (store.propertyData.images.length < 10) {
+      if (store.propertyData.images.length < 12) {
         store.addImage(file);
       }
     });
@@ -182,7 +249,7 @@ export default function CreatePropertyPage() {
     onDrop,
     accept: { 'image/jpeg': [], 'image/png': [] },
     maxSize: 5242880,
-    maxFiles: 10
+    maxFiles: 12
   });
 
   // DnD sensors
@@ -327,7 +394,43 @@ export default function CreatePropertyPage() {
           </div>
 
           <div className="bg-white px-6 py-8 shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">4. Property Images</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">4. Detailed Rooms & Info</h2>
+            <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+              {[
+                { key: 'buildingInfo', label: 'Building Info', type: 'text' },
+                { key: 'entranceHall', label: 'Entrance Hall', type: 'text' },
+                { key: 'kitchenLounge', label: 'Kitchen / Lounge', type: 'text' },
+                { key: 'bedroomOne', label: 'Bedroom One', type: 'text' },
+                { key: 'enSuite', label: 'En-Suite', type: 'text' },
+                { key: 'bedroomTwo', label: 'Bedroom Two', type: 'text' },
+                { key: 'bathroomDetails', label: 'Bathroom', type: 'text' },
+                { key: 'externally', label: 'Externally', type: 'text' },
+                { key: 'viewingArrangements', label: 'Viewing Arrangements', type: 'text' }
+              ].map(field => (
+                <div key={field.key}>
+                  <label className="block text-sm font-medium text-gray-700">{field.label}</label>
+                  <div className="mt-2">
+                    <input {...register(field.key as any)} className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" />
+                  </div>
+                </div>
+              ))}
+              {[
+                { key: 'additionalInfo', label: 'Additional Info' },
+                { key: 'agentsNotes', label: 'Agents Notes' },
+                { key: 'disclaimer', label: 'Disclaimer' }
+              ].map(field => (
+                <div key={field.key} className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">{field.label}</label>
+                  <div className="mt-2">
+                    <textarea {...register(field.key as any)} rows={3} className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm"></textarea>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white px-6 py-8 shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">5. Property Images</h2>
             
             <div {...getRootProps()} className={`mt-2 flex justify-center rounded-lg border border-dashed px-6 py-10 transition-colors cursor-pointer hover:bg-blue-50 ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-900/25'}`}>
               <div className="text-center">
@@ -336,7 +439,7 @@ export default function CreatePropertyPage() {
                   <input {...getInputProps()} />
                   <p className="pl-1">Drag and drop images, or click to upload</p>
                 </div>
-                <p className="text-xs leading-5 text-gray-500">JPG/PNG up to 5MB (Max 10)</p>
+                <p className="text-xs leading-5 text-gray-500">JPG/PNG up to 5MB (Max 12)</p>
               </div>
             </div>
 
@@ -356,7 +459,7 @@ export default function CreatePropertyPage() {
           </div>
 
           <div className="bg-white px-6 py-8 shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">5. Agent Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">6. Agent Information</h2>
             <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-6">
               <div className="sm:col-span-3">
                 <label className="block text-sm font-medium text-gray-700">Agent Name</label>
@@ -396,13 +499,21 @@ export default function CreatePropertyPage() {
           </div>
 
           <div className="bg-white px-6 py-8 shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">6. Company</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">7. Company</h2>
             <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Company Name</label>
-                <div className="mt-2">
-                  <input {...register('companyName')} className="block w-full md:w-1/2 rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" />
-                  {errors.companyName && <p className="mt-1 text-sm text-red-600">{errors.companyName.message}</p>}
+              <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Company Name</label>
+                  <div className="mt-2">
+                    <input {...register('companyName')} className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" />
+                    {errors.companyName && <p className="mt-1 text-sm text-red-600">{errors.companyName.message}</p>}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Company Website</label>
+                  <div className="mt-2">
+                    <input {...register('companyWebsite')} className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" placeholder="e.g. www.jordanfishwick.co.uk" />
+                  </div>
                 </div>
               </div>
               <div>

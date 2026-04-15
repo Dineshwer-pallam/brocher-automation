@@ -30,24 +30,32 @@ export class CanvasHistory {
     }
   }
 
-  public async undo() {
-    if (!this.canUndo()) return;
-    this.isProcessing = true;
-    this.historyIndex--;
-    const state = this.history[this.historyIndex];
-    await this.canvas.loadFromJSON(state);
-    this.canvas.renderAll();
-    this.isProcessing = false;
+  public undo(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.canUndo()) return resolve();
+      this.isProcessing = true;
+      this.historyIndex--;
+      const state = this.history[this.historyIndex];
+      this.canvas.loadFromJSON(state, () => {
+        this.canvas.renderAll();
+        this.isProcessing = false;
+        resolve();
+      });
+    });
   }
 
-  public async redo() {
-    if (!this.canRedo()) return;
-    this.isProcessing = true;
-    this.historyIndex++;
-    const state = this.history[this.historyIndex];
-    await this.canvas.loadFromJSON(state);
-    this.canvas.renderAll();
-    this.isProcessing = false;
+  public redo(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.canRedo()) return resolve();
+      this.isProcessing = true;
+      this.historyIndex++;
+      const state = this.history[this.historyIndex];
+      this.canvas.loadFromJSON(state, () => {
+        this.canvas.renderAll();
+        this.isProcessing = false;
+        resolve();
+      });
+    });
   }
 
   public canUndo(): boolean {

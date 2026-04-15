@@ -24,11 +24,25 @@ export function replaceBindings(text: string, property: PropertyData): string {
   resolved = resolved.replace(/\{\{\s*description\s*\}\}/g, property.description || 'Property description here...');
   resolved = resolved.replace(/\{\{\s*highlights\s*\}\}/g, property.highlights?.join(" • ") || 'Key Feature 1 • Key Feature 2');
   
+  resolved = resolved.replace(/\{\{\s*building_info\s*\}\}/g, property.buildingInfo || 'Building details here...');
+  resolved = resolved.replace(/\{\{\s*entrance_hall\s*\}\}/g, property.entranceHall || 'Entrance hall description...');
+  resolved = resolved.replace(/\{\{\s*kitchen_lounge\s*\}\}/g, property.kitchenLounge || 'Kitchen/lounge details here...');
+  resolved = resolved.replace(/\{\{\s*bedroom_one\s*\}\}/g, property.bedroomOne || 'Bedroom one description...');
+  resolved = resolved.replace(/\{\{\s*en_suite\s*\}\}/g, property.enSuite || 'En-suite details here...');
+  resolved = resolved.replace(/\{\{\s*bedroom_two\s*\}\}/g, property.bedroomTwo || 'Bedroom two description...');
+  resolved = resolved.replace(/\{\{\s*bathroom_details\s*\}\}/g, property.bathroomDetails || 'Bathroom details here...');
+  resolved = resolved.replace(/\{\{\s*externally\s*\}\}/g, property.externally || 'External details here...');
+  resolved = resolved.replace(/\{\{\s*additional_info\s*\}\}/g, property.additionalInfo || 'Additional information here...');
+  resolved = resolved.replace(/\{\{\s*agents_notes\s*\}\}/g, property.agentsNotes || 'Agents notes here...');
+  resolved = resolved.replace(/\{\{\s*disclaimer\s*\}\}/g, property.disclaimer || 'Disclaimer here...');
+  resolved = resolved.replace(/\{\{\s*viewing_arrangements\s*\}\}/g, property.viewingArrangements || 'Viewing strictly by appointment...');
+  
   resolved = resolved.replace(/\{\{\s*agent_name\s*\}\}/g, property.agent.name || 'Agent Name');
   resolved = resolved.replace(/\{\{\s*agent_phone\s*\}\}/g, property.agent.phone || 'Agent Phone');
   resolved = resolved.replace(/\{\{\s*agent_email\s*\}\}/g, property.agent.email || 'Agent Email');
   
   resolved = resolved.replace(/\{\{\s*company_name\s*\}\}/g, property.company.name || 'Company Name');
+  resolved = resolved.replace(/\{\{\s*company_website\s*\}\}/g, property.company.website || 'www.company.com');
   resolved = resolved.replace(/\{\{\s*address\s*\}\}/g, property.address || '123 Property Address');
 
   return resolved;
@@ -62,10 +76,20 @@ export async function processWithLiveData(
           
           // Determine new URL
           let urlToLoad = '';
+          const len = propertyData.images.length;
+          
           if (dataKey === '{{hero_image}}') urlToLoad = propertyData.images[0]?.url || '';
           else if (dataKey === '{{gallery_1}}') urlToLoad = propertyData.images[1]?.url || '';
           else if (dataKey === '{{gallery_2}}') urlToLoad = propertyData.images[2]?.url || '';
           else if (dataKey === '{{gallery_3}}') urlToLoad = propertyData.images[3]?.url || '';
+          else if (dataKey === '{{gallery_4}}') urlToLoad = propertyData.images[4]?.url || '';
+          else if (dataKey === '{{gallery_5}}') urlToLoad = propertyData.images[5]?.url || '';
+          else if (dataKey === '{{gallery_6}}') urlToLoad = propertyData.images[6]?.url || '';
+          else if (dataKey === '{{gallery_7}}') urlToLoad = propertyData.images[7]?.url || '';
+          else if (dataKey === '{{gallery_8}}') urlToLoad = propertyData.images[8]?.url || '';
+          else if (dataKey === '{{floorplan}}') urlToLoad = propertyData.images[Math.max(0, len - 1)]?.url || '';
+          else if (dataKey === '{{epc_1}}') urlToLoad = propertyData.images[Math.max(0, len - 2)]?.url || '';
+          else if (dataKey === '{{epc_2}}') urlToLoad = propertyData.images[Math.max(0, len - 3)]?.url || '';
           else if (dataKey === '{{agent_photo}}') urlToLoad = propertyData.agent.photoUrl || '';
           else if (dataKey === '{{company_logo}}') urlToLoad = propertyData.company.logoUrl || '';
           

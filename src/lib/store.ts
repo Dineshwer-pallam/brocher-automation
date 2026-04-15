@@ -37,9 +37,21 @@ const defaultPropertyData: PropertyData = {
   address: '',
   description: '',
   highlights: [],
+  buildingInfo: '',
+  entranceHall: '',
+  kitchenLounge: '',
+  bedroomOne: '',
+  enSuite: '',
+  bedroomTwo: '',
+  bathroomDetails: '',
+  externally: '',
+  additionalInfo: '',
+  agentsNotes: '',
+  disclaimer: '',
+  viewingArrangements: '',
   images: [],
   agent: { name: '', phone: '', email: '', photoUrl: '' },
-  company: { name: '', logoUrl: '' },
+  company: { name: '', logoUrl: '', website: '' },
 };
 
 export const useAppStore = create<AppState>((set) => ({

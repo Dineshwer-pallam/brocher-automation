@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore } from '@/lib/store';
-import { ArrowLeft, Undo2, Redo2, Type, ImagePlus, Square, Circle as CircleIcon, Minus, Eye, Download } from 'lucide-react';
+import { ArrowLeft, Undo2, Redo2, Type, ImagePlus, Square, Circle as CircleIcon, Minus, Eye, Download, Braces } from 'lucide-react';
 import { fabric } from 'fabric';
 import { CanvasHistory } from '@/lib/fabric/history';
 import { useState } from 'react';
@@ -17,6 +17,42 @@ export default function TopToolbar({ canvas, history, onPreview, onDownload }: T
   const store = useAppStore();
   const [showImgPopover, setShowImgPopover] = useState(false);
   const [showShapePopover, setShowShapePopover] = useState(false);
+  const [showVarPopover, setShowVarPopover] = useState(false);
+
+  const variablesList = [
+    { label: 'Address', tag: '{{address}}' },
+    { label: 'Price', tag: '{{price}}' },
+    { label: 'Description', tag: '{{description}}' },
+    { label: 'Building Info', tag: '{{building_info}}' },
+    { label: 'Entrance Hall', tag: '{{entrance_hall}}' },
+    { label: 'Kitchen/Lounge', tag: '{{kitchen_lounge}}' },
+    { label: 'Bedroom One', tag: '{{bedroom_one}}' },
+    { label: 'En-Suite', tag: '{{en_suite}}' },
+    { label: 'Bedroom Two', tag: '{{bedroom_two}}' },
+    { label: 'Bathroom Details', tag: '{{bathroom_details}}' },
+    { label: 'Externally', tag: '{{externally}}' },
+    { label: 'Additional Info', tag: '{{additional_info}}' },
+    { label: 'Agents Notes', tag: '{{agents_notes}}' },
+    { label: 'Disclaimer', tag: '{{disclaimer}}' },
+    { label: 'Viewing Arrangements', tag: '{{viewing_arrangements}}' },
+    { label: 'Agent Name', tag: '{{agent_name}}' },
+    { label: 'Agent Phone', tag: '{{agent_phone}}' },
+    { label: 'Agent Email', tag: '{{agent_email}}' },
+    { label: 'Company Name', tag: '{{company_name}}' },
+    { label: 'Company Website', tag: '{{company_website}}' }
+  ];
+
+  const addVariable = (tag: string) => {
+    if (!canvas) return;
+    const text = new (fabric as any).Textbox(tag, { 
+       left: 247.5, top: 400, width: 200, fontSize: 14, fontFamily: 'Inter', fill: '#ba1c21', dataBinding: tag 
+    });
+    canvas.add(text);
+    canvas.setActiveObject(text);
+    canvas.renderAll();
+    setShowVarPopover(false);
+  };
+
 
   const addText = () => {
     if (!canvas) return;
@@ -133,6 +169,28 @@ export default function TopToolbar({ canvas, history, onPreview, onDownload }: T
               <button onClick={() => addShape('line')} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm flex items-center gap-2">
                 <Minus size={14}/> Line
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* Variables Button & Popover */}
+        <div className="relative">
+          <button 
+            onClick={() => setShowVarPopover(!showVarPopover)} 
+            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded flex items-center justify-center w-9 h-9" 
+            title="Add Variable"
+          >
+            <Braces size={18} />
+          </button>
+          {showVarPopover && (
+            <div className="absolute top-10 left-0 bg-white border shadow-lg rounded-md py-1 min-w-48 max-h-64 overflow-y-auto z-50">
+              <p className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider sticky top-0 bg-white/95 backdrop-blur">Dynamic Data</p>
+              {variablesList.map(v => (
+                <button key={v.tag} onClick={() => addVariable(v.tag)} className="w-full text-left px-4 py-1.5 hover:bg-gray-50 text-sm flex items-center justify-between group">
+                  <span className="text-gray-700">{v.label}</span>
+                  <span className="text-gray-400 text-xs font-mono group-hover:text-blue-500">{v.tag}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
