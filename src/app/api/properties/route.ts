@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
+    console.log("Fetching DB properties...");
     const properties = await prisma.property.findMany({
       orderBy: { createdAt: 'desc' }
     });

@@ -11,10 +11,11 @@ import { getPlaceholderDataURL } from './utils';
 type BuilderTopToolbarProps = {
   canvas: fabric.Canvas | null;
   history: CanvasHistory | null;
+  onPreview: () => void;
   onExportConfig: () => void;
 };
 
-export default function BuilderTopToolbar({ canvas, history, onExportConfig }: BuilderTopToolbarProps) {
+export default function BuilderTopToolbar({ canvas, history, onPreview, onExportConfig }: BuilderTopToolbarProps) {
   const store = useAppStore();
   const [showShapePopover, setShowShapePopover] = useState(false);
   const [showVarPopover, setShowVarPopover] = useState(false);
@@ -222,6 +223,9 @@ export default function BuilderTopToolbar({ canvas, history, onExportConfig }: B
       </div>
 
       <div className="flex items-center gap-2">
+        <button onClick={onPreview} className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium text-sm px-4 py-2 rounded flex items-center gap-2 transition-colors shadow-sm">
+          <span>👀</span> Live Preview
+        </button>
         <button onClick={onExportConfig} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-4 py-2 rounded flex items-center gap-2 transition-colors shadow-sm">
           <Download size={16} /> Export JSON
         </button>

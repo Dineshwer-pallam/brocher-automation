@@ -132,7 +132,7 @@ export default function BuilderRightPanel({ canvas, width, height }: { canvas: f
            {ALL_BINDINGS.map(b => <option key={b} value={b}>{b}</option>)}
         </select>
         {isText && (activeObj as any).dataBinding && (
-          <p className="text-[9px] text-indigo-500 mt-1">Hint: Textboxes can also type bindings inline like "Asking {{price}}".</p>
+          <p className="text-[9px] text-indigo-500 mt-1">Hint: Textboxes can also type bindings inline like &quot;Asking {`{{price}}`}&quot;.</p>
         )}
       </div>
 

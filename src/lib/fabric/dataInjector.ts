@@ -69,7 +69,7 @@ export async function processWithLiveData(
         }
       } 
       else if (obj instanceof fabric.Image) {
-        const dataKey = (obj as any).dataKey;
+        const dataKey = (obj as any).dataKey || (obj as any).dataBinding;
         if (dataKey) {
           // Store original image URL and scale state
           restoreMap.set(obj, { 

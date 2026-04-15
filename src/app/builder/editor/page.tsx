@@ -10,7 +10,9 @@ import BuilderTopToolbar from '@/components/builder/BuilderTopToolbar';
 import BuilderLeftPanel from '@/components/builder/BuilderLeftPanel';
 import BuilderRightPanel from '@/components/builder/BuilderRightPanel';
 import BuilderBottomBar from '@/components/builder/BuilderBottomBar';
+import PreviewModal from '@/components/editor/PreviewModal';
 import { serializeCanvasToBrochureTemplate, downloadJsonConfig } from '@/lib/export/jsonExport';
+import { processWithLiveData } from '@/lib/fabric/dataInjector';
 import { getPlaceholderDataURL } from '@/components/builder/utils';
 
 // Global clipboard for cross-page copy-paste in this session
@@ -24,6 +26,13 @@ function BuilderCanvasInner() {
   const [loading, setLoading] = useState(true);
   const [canvases, setCanvases] = useState<fabric.Canvas[]>([]);
   const [histories, setHistories] = useState<CanvasHistory[]>([]);
+  
+  // Preview Modal State
+  const [showPreview, setShowPreview] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [dbProperties, setDbProperties] = useState<any[]>([]);
+  const [selectedPreviewPropertyId, setSelectedPreviewPropertyId] = useState<string>('');
   
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const mountRootRef = useRef<HTMLDivElement>(null);
@@ -330,10 +339,82 @@ function BuilderCanvasInner() {
     }
   };
 
+  const fetchDbPropertiesIfEmpty = async () => {
+    if (dbProperties.length > 0) return dbProperties;
+    try {
+      const res = await fetch('/api/properties');
+      if (res.ok) {
+        const props = await res.json();
+        setDbProperties(props);
+        return props;
+      }
+    } catch (err) {}
+    return [];
+  };
+
+  const constructPropertyDataFromDb = (dbProp: any) => {
+      const images = JSON.parse(dbProp.images || "[]").map((url: string, i: number) => ({ id: `img_${i}`, url, file: null as unknown as File }));
+      return {
+          title: dbProp.title,
+          propertyType: dbProp.type.toLowerCase() as any,
+          price: dbProp.price,
+          currency: 'USD',
+          bedrooms: dbProp.bedrooms,
+          bathrooms: dbProp.bathrooms,
+          area: dbProp.area || 0,
+          areaUnit: 'sqft' as const,
+          address: dbProp.address,
+          description: dbProp.description,
+          highlights: [],
+          buildingInfo: '', entranceHall: '', kitchenLounge: '', bedroomOne: '', enSuite: '', bedroomTwo: '', bathroomDetails: '', externally: '', additionalInfo: '', agentsNotes: '', disclaimer: '', viewingArrangements: '',
+          agent: { name: dbProp.agentName || '', phone: dbProp.agentPhone || '', email: dbProp.agentEmail || '', photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80', photoFile: null },
+          company: { name: '', website: '', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png', logoFile: null },
+          images: images
+      };
+  };
+
+  const handleGeneratePreview = async (propObj: any) => {
+     setIsGenerating(true);
+     await processWithLiveData(canvases, constructPropertyDataFromDb(propObj), async () => {
+       const urls = canvases.map(c => {
+         c.discardActiveObject();
+         c.renderAll();
+         return c.toDataURL({ format: 'png', quality: 1, multiplier: 1.5 });
+       });
+       setPreviewUrls(urls);
+     });
+     setIsGenerating(false);
+  };
+
+  const runPreview = async () => {
+    setShowPreview(true);
+    setIsGenerating(true);
+    
+    // Fetch if needed
+    const props = await fetchDbPropertiesIfEmpty();
+    let propToUse = props && props.length > 0 ? props[0] : null;
+    
+    if (propToUse) {
+       setSelectedPreviewPropertyId(propToUse.id);
+       await handleGeneratePreview(propToUse);
+    } else {
+       setIsGenerating(false);
+       alert("No properties found in database to preview");
+    }
+  };
+
+  const changePreviewProperty = async (propId: string) => {
+    setSelectedPreviewPropertyId(propId);
+    const propToUse = dbProperties.find(p => p.id === propId);
+    if (propToUse) {
+      await handleGeneratePreview(propToUse);
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50 text-gray-900">
       
-      <BuilderTopToolbar canvas={activeCanvas} history={activeHistory} onExportConfig={handleExportConfig} />
+      <BuilderTopToolbar canvas={activeCanvas} history={activeHistory} onPreview={runPreview} onExportConfig={handleExportConfig} />
 
       <div className="flex-1 flex overflow-hidden">
         
@@ -372,6 +453,21 @@ function BuilderCanvasInner() {
         onAddPage={handleAddPage} 
         onDeletePage={handleDeletePage} 
       />
+
+      {showPreview && (
+        <PreviewModal 
+          dataUrls={previewUrls} 
+          properties={dbProperties}
+          selectedPropertyId={selectedPreviewPropertyId}
+          onSelectProperty={changePreviewProperty}
+          isGenerating={isGenerating}
+          onClose={() => setShowPreview(false)} 
+          onDownload={() => {
+            setShowPreview(false);
+            alert("This is the Builder! Real PDF export happens in the Main Editor. Save your template first via Export JSON.");
+          }} 
+        />
+      )}
 
     </div>
   );

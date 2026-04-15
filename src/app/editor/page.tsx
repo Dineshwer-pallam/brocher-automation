@@ -26,6 +26,11 @@ export default function EditorPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  
+  // Preview Modal Hot-Swap State
+  const [dbProperties, setDbProperties] = useState<any[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedPreviewPropertyId, setSelectedPreviewPropertyId] = useState<string>('');
 
   // The actual Fabric instance referencing the current page
   const [canvases, setCanvases] = useState<fabric.Canvas[]>([]);
@@ -152,16 +157,86 @@ export default function EditorPage() {
     setExporting(false);
   };
 
+  const fetchDbPropertiesIfEmpty = async () => {
+    if (dbProperties.length > 0) return dbProperties;
+    try {
+      const res = await fetch('/api/properties');
+      if (res.ok) {
+        const props = await res.json();
+        setDbProperties(props);
+        return props;
+      }
+    } catch (err) {}
+    return [];
+  };
+
+  const constructPropertyDataFromDb = (dbProp: any) => {
+      const images = JSON.parse(dbProp.images || "[]").map((url: string, i: number) => ({ id: `img_${i}`, url, file: null as unknown as File }));
+      return {
+          title: dbProp.title,
+          propertyType: dbProp.type.toLowerCase() as any,
+          price: dbProp.price,
+          currency: 'USD',
+          bedrooms: dbProp.bedrooms,
+          bathrooms: dbProp.bathrooms,
+          area: dbProp.area || 0,
+          areaUnit: 'sqft' as const,
+          address: dbProp.address,
+          description: dbProp.description,
+          highlights: [],
+          buildingInfo: '', entranceHall: '', kitchenLounge: '', bedroomOne: '', enSuite: '', bedroomTwo: '', bathroomDetails: '', externally: '', additionalInfo: '', agentsNotes: '', disclaimer: '', viewingArrangements: '',
+          agent: { name: dbProp.agentName || '', phone: dbProp.agentPhone || '', email: dbProp.agentEmail || '', photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80', photoFile: null },
+          company: { name: '', website: '', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png', logoFile: null },
+          images: images
+      };
+  };
+
+  const handleGeneratePreview = async (propObj: any) => {
+     setIsGenerating(true);
+     await processWithLiveData(canvases, propObj, async () => {
+       const urls = canvases.map(c => {
+         c.discardActiveObject();
+         c.renderAll();
+         return c.toDataURL({ format: 'png', quality: 1, multiplier: 1.5 });
+       });
+       setPreviewUrls(urls);
+     });
+     setIsGenerating(false);
+  };
+
   const runPreview = async () => {
-    await processWithLiveData(canvases, store.propertyData, async () => {
-      const urls = canvases.map(c => {
-        c.discardActiveObject();
-        c.renderAll();
-        return c.toDataURL({ format: 'png', quality: 1, multiplier: 1.5 });
-      });
-      setPreviewUrls(urls);
-    });
     setShowPreview(true);
+    setIsGenerating(true);
+    
+    // Fetch DB list for dropdown
+    await fetchDbPropertiesIfEmpty();
+    
+    // Default to the original store.propertyData first
+    await handleGeneratePreview(store.propertyData);
+  };
+  
+  const changePreviewProperty = async (propId: string) => {
+    setSelectedPreviewPropertyId(propId);
+    const propToUse = dbProperties.find(p => p.id === propId);
+    if (propToUse) {
+      // Overwrite the live global store safely if they want to download it later
+      store.setProperty('title', propToUse.title);
+      store.setProperty('propertyType', propToUse.type.toLowerCase());
+      store.setProperty('price', propToUse.price);
+      store.setProperty('currency', 'USD');
+      store.setProperty('bedrooms', propToUse.bedrooms);
+      store.setProperty('bathrooms', propToUse.bathrooms);
+      store.setProperty('area', propToUse.area || 0);
+      store.setProperty('areaUnit', 'sqft');
+      store.setProperty('address', propToUse.address);
+      store.setProperty('description', propToUse.description);
+      store.setNestedProperty('agent', 'name', propToUse.agentName || '');
+      
+      const pData = constructPropertyDataFromDb(propToUse);
+      store.setProperty('images', pData.images);
+      
+      await handleGeneratePreview(pData);
+    }
   };
 
   const curIdx = store.currentPage - 1;
@@ -214,6 +289,10 @@ export default function EditorPage() {
       {showPreview && (
         <PreviewModal 
           dataUrls={previewUrls} 
+          properties={dbProperties}
+          selectedPropertyId={selectedPreviewPropertyId}
+          onSelectProperty={changePreviewProperty}
+          isGenerating={isGenerating}
           onClose={() => setShowPreview(false)} 
           onDownload={() => {
             setShowPreview(false);
