@@ -18,16 +18,24 @@ function formatArea(area: number, unit: string): string {
   return `${formatted} ${unit === 'sqft' ? 'sq ft' : 'sq m'}`;
 }
 
-async function loadImage(url: string, placeholderDims?: { w: number, h: number }): Promise<fabric.Image | fabric.Rect> {
+async function loadImage(url: string, placeholderDims?: { w: number, h: number }): Promise<fabric.Image> {
   return new Promise((resolve) => {
+    const createPlaceholder = () => {
+         const canvas = document.createElement('canvas');
+         canvas.width = placeholderDims?.w || 200;
+         canvas.height = placeholderDims?.h || 200;
+         const ctx = canvas.getContext('2d');
+         if (ctx) {
+             ctx.fillStyle = '#cccccc';
+             ctx.fillRect(0,0, canvas.width, canvas.height);
+         }
+         fabric.Image.fromURL(canvas.toDataURL(), (fallbackImg) => {
+            resolve(fallbackImg);
+         });
+    };
+
     if (!url) {
-      // Return placeholder
-      const p = new fabric.Rect({
-        width: placeholderDims?.w || 200,
-        height: placeholderDims?.h || 200,
-        fill: '#cccccc',
-      });
-      resolve(p);
+      createPlaceholder();
       return;
     }
     
@@ -35,12 +43,7 @@ async function loadImage(url: string, placeholderDims?: { w: number, h: number }
       if (img && !img.isError) {
         resolve(img);
       } else {
-        const p = new fabric.Rect({
-          width: placeholderDims?.w || 200,
-          height: placeholderDims?.h || 200,
-          fill: '#cccccc',
-        });
-        resolve(p);
+        createPlaceholder();
       }
     }, { crossOrigin: 'anonymous' });
   });

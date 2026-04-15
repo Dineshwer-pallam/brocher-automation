@@ -54,7 +54,7 @@ export async function processWithLiveData(
   callback: () => Promise<void>
 ) {
   // 1. Store previous state and inject live data
-  const restoreMap = new Map<fabric.Object, { text?: string, src?: string }>();
+  const restoreMap = new Map<fabric.Object, { text?: string, src?: string, width?: number, height?: number, scaleX?: number, scaleY?: number }>();
   
   const imgPromises: Promise<void>[] = [];
 
@@ -71,8 +71,14 @@ export async function processWithLiveData(
       else if (obj instanceof fabric.Image) {
         const dataKey = (obj as any).dataKey;
         if (dataKey) {
-          // Store original image URL
-          restoreMap.set(obj, { src: obj.getSrc() });
+          // Store original image URL and scale state
+          restoreMap.set(obj, { 
+            src: obj.getSrc(),
+            width: obj.width,
+            height: obj.height,
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY
+          });
           
           // Determine new URL
           let urlToLoad = '';
@@ -96,10 +102,20 @@ export async function processWithLiveData(
           if (urlToLoad) {
             imgPromises.push(new Promise<void>((resolve) => {
               const currentObj = obj as fabric.Image;
+              const targetW = (currentObj.width || 1) * (currentObj.scaleX || 1);
+              const targetH = (currentObj.height || 1) * (currentObj.scaleY || 1);
+
               let imgEl = new Image();
               imgEl.crossOrigin = 'anonymous';
               imgEl.onload = () => {
                 currentObj.setElement(imgEl);
+                currentObj.set({
+                  width: imgEl.naturalWidth || imgEl.width,
+                  height: imgEl.naturalHeight || imgEl.height,
+                  scaleX: targetW / (imgEl.naturalWidth || imgEl.width || 1),
+                  scaleY: targetH / (imgEl.naturalHeight || imgEl.height || 1)
+                });
+                currentObj.setCoords();
                 resolve();
               };
               imgEl.onerror = () => resolve();
@@ -130,7 +146,15 @@ export async function processWithLiveData(
           obj.set({ text: restored.text });
         }
         if (restored.src !== undefined && obj instanceof fabric.Image) {
-          obj.setSrc(restored.src, () => {});
+          obj.setSrc(restored.src, () => {
+            obj.set({
+              width: restored.width,
+              height: restored.height,
+              scaleX: restored.scaleX,
+              scaleY: restored.scaleY
+            });
+            obj.setCoords();
+          });
         }
       }
     }

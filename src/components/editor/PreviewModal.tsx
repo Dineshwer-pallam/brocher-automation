@@ -30,7 +30,7 @@ export default function PreviewModal({ onClose, onDownload, dataUrls }: PreviewM
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-4 md:p-12 flex flex-col md:flex-row items-center justify-center gap-8 pb-32">
+      <div className="flex-1 overflow-y-auto p-4 md:p-12 flex flex-col items-center justify-start gap-12 pb-32">
         {dataUrls.map((url, i) => (
           <div key={i} className="flex flex-col items-center gap-4 shrink-0">
             <span className="text-gray-400 font-mono text-sm tracking-widest uppercase">Page {i + 1}</span>
