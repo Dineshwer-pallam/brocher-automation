@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { AlignLeft, AlignCenter, AlignRight, Bold, Type, Database } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { getPlaceholderDataURL } from './utils';
 
 const ALL_BINDINGS = [
   '{{title}}', '{{price}}', '{{bedrooms}}', '{{bathrooms}}', '{{area}}',
@@ -55,8 +56,20 @@ export default function BuilderRightPanel({ canvas, width, height }: { canvas: f
   const updateProp = (key: string, value: any) => {
     if (activeObj && canvas) {
       activeObj.set(key, value);
-      canvas.requestRenderAll();
-      setTick(t => t + 1);
+      
+      // Dynamic SVG generation if updating dataBinding on an ImagePlaceholder
+      if (key === 'dataBinding' && (activeObj as any).isImagePlaceholder) {
+         const w = (activeObj.width || 200);
+         const h = (activeObj.height || 150);
+         const dataUrl = getPlaceholderDataURL(w, h, value || 'Image Placeholder');
+         (activeObj as fabric.Image).setSrc(dataUrl, () => {
+             canvas.requestRenderAll();
+             setTick(t => t + 1);
+         });
+      } else {
+         canvas.requestRenderAll();
+         setTick(t => t + 1);
+      }
     }
   };
 

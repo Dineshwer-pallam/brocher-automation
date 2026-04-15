@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { fabric } from 'fabric';
-import { Type, Image as ImageIcon, Square, CircleIcon, Minus, Eye, EyeOff, Lock, Unlock, Layers } from 'lucide-react';
+import { Type, Image as ImageIcon, Square, CircleIcon, Minus, Eye, EyeOff, Lock, Unlock, Layers, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 
 export default function BuilderLeftPanel({ canvas }: { canvas: fabric.Canvas | null }) {
@@ -92,6 +92,22 @@ export default function BuilderLeftPanel({ canvas }: { canvas: fabric.Canvas | n
               >
                 {layer.selectable ? <Unlock size={14} className="text-gray-400" /> : <Lock size={14} />}
               </button>
+              <div className="flex items-center ml-1 border-l pl-1 border-gray-200">
+                <button 
+                   onClick={(e) => { e.stopPropagation(); canvas?.bringForward(layer); canvas?.renderAll(); setTick(t=>t+1); }} 
+                   className="p-1 hover:bg-gray-200 rounded shrink-0"
+                   title="Bring Forward"
+                >
+                  <ArrowUp size={14} className="text-gray-400" />
+                </button>
+                <button 
+                   onClick={(e) => { e.stopPropagation(); canvas?.sendBackwards(layer); canvas?.renderAll(); setTick(t=>t+1); }} 
+                   className="p-1 hover:bg-gray-200 rounded shrink-0"
+                   title="Send Backwards"
+                >
+                  <ArrowDown size={14} className="text-gray-400" />
+                </button>
+              </div>
             </div>
           );
         })}

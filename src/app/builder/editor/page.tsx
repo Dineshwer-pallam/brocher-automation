@@ -10,6 +10,11 @@ import BuilderTopToolbar from '@/components/builder/BuilderTopToolbar';
 import BuilderLeftPanel from '@/components/builder/BuilderLeftPanel';
 import BuilderRightPanel from '@/components/builder/BuilderRightPanel';
 import BuilderBottomBar from '@/components/builder/BuilderBottomBar';
+import { serializeCanvasToBrochureTemplate, downloadJsonConfig } from '@/lib/export/jsonExport';
+import { getPlaceholderDataURL } from '@/components/builder/utils';
+
+// Global clipboard for cross-page copy-paste in this session
+let clipboardData: fabric.Object | null = null;
 
 function BuilderCanvasInner() {
   const router = useRouter();
@@ -52,6 +57,7 @@ function BuilderCanvasInner() {
 
         const handleKeyDown = (e: KeyboardEvent) => {
           if (e.target !== document.body && (e.target as HTMLElement).tagName !== 'CANVAS') return; 
+          
           if (e.key === 'Delete' || e.key === 'Backspace') {
               const activeObjects = c.getActiveObjects();
               if (activeObjects.length) {
@@ -60,20 +66,131 @@ function BuilderCanvasInner() {
                   c.renderAll();
               }
           }
+          
+          if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+              const active = c.getActiveObject();
+              if (active) {
+                 active.clone((cloned: fabric.Object) => {
+                    clipboardData = cloned;
+                 });
+              }
+          }
+          
+          if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+              if (clipboardData) {
+                  clipboardData.clone((clonedObj: fabric.Object) => {
+                      c.discardActiveObject();
+                      clonedObj.set({
+                          left: clonedObj.left! + 10,
+                          top: clonedObj.top! + 10,
+                          evented: true,
+                      });
+                      
+                      if (clonedObj.type === 'activeSelection') {
+                          // Multiple objects not perfectly handled here yet, stick to single obj for now
+                          clonedObj.canvas = c;
+                          clonedObj.forEachObject((obj) => {
+                              c.add(obj);
+                          });
+                          clonedObj.setCoords();
+                      } else {
+                          // Need to preserve Custom Properties like dataBinding manually
+                          if ((clipboardData as any).dataBinding) (clonedObj as any).dataBinding = (clipboardData as any).dataBinding;
+                          if ((clipboardData as any).isImagePlaceholder) (clonedObj as any).isImagePlaceholder = (clipboardData as any).isImagePlaceholder;
+                          
+                          c.add(clonedObj);
+                      }
+                      
+                      clipboardData.top! += 10;
+                      clipboardData.left! += 10;
+                      c.setActiveObject(clonedObj);
+                      c.requestRenderAll();
+                  });
+              }
+          }
         };
         window.addEventListener('keydown', handleKeyDown);
         return { c, hist };
       };
 
       if (jsonStr) {
-        // Will implement JSON parsing in Phase 3
-        console.log("Found imported template in SessionStorage!");
+        try {
+          const template = JSON.parse(jsonStr);
+          const promises = template.pages.map(async (page: any) => {
+            const { c, hist } = createBlankCanvas();
+            c.backgroundColor = page.background || '#ffffff';
+            
+            const objPromises = page.objects.map((obj: any) => {
+              return new Promise<void>((resolve) => {
+                 if (obj.type === 'rect') {
+                    const rect = new fabric.Rect({
+                       left: obj.left, top: obj.top, width: obj.width, height: obj.height, fill: obj.fill,
+                       rx: obj.rx, ry: obj.ry, stroke: obj.stroke, strokeWidth: obj.strokeWidth, opacity: obj.opacity
+                    });
+                    if (obj.dataBinding) (rect as any).dataBinding = obj.dataBinding;
+                    c.add(rect);
+                    resolve();
+                 } else if (obj.type === 'circle') {
+                    const circle = new fabric.Circle({
+                       left: obj.left, top: obj.top, radius: obj.radius, fill: obj.fill,
+                       stroke: obj.stroke, strokeWidth: obj.strokeWidth, opacity: obj.opacity
+                    });
+                    if (obj.dataBinding) (circle as any).dataBinding = obj.dataBinding;
+                    c.add(circle);
+                    resolve();
+                 } else if (obj.type === 'line') {
+                    const line = new fabric.Line([obj.x1 || 0, obj.y1 || 0, obj.x2 || 100, obj.y2 || 0], {
+                       left: obj.left, top: obj.top, stroke: obj.stroke, strokeWidth: obj.strokeWidth || 1, opacity: obj.opacity
+                    });
+                    if (obj.dataBinding) (line as any).dataBinding = obj.dataBinding;
+                    c.add(line);
+                    resolve();
+                 } else if (obj.type === 'textbox') {
+                    const text = new fabric.Textbox(obj.dataBinding || 'Text', {
+                       left: obj.left, top: obj.top, width: obj.width, fill: obj.fill,
+                       fontSize: obj.fontSize, fontFamily: obj.fontFamily, fontWeight: obj.fontWeight, textAlign: obj.textAlign, lineHeight: obj.lineHeight, opacity: obj.opacity
+                    });
+                    if (obj.dataBinding) (text as any).dataBinding = obj.dataBinding;
+                    c.add(text);
+                    resolve();
+                 } else if (obj.type === 'image') {
+                    const dataUrl = getPlaceholderDataURL(obj.width || 200, obj.height || 150, obj.dataBinding || 'Image Placeholder');
+                    fabric.Image.fromURL(dataUrl, (img) => {
+                       img.set({ left: obj.left, top: obj.top, opacity: obj.opacity });
+                       (img as any).isImagePlaceholder = true;
+                       if (obj.dataBinding) (img as any).dataBinding = obj.dataBinding;
+                       c.add(img);
+                       resolve();
+                    });
+                 } else {
+                    resolve();
+                 }
+              });
+            });
+            
+            await Promise.all(objPromises);
+            c.renderAll();
+            return { c, hist };
+          });
+          
+          const loadedPages = await Promise.all(promises);
+          if (loadedPages.length > 0) {
+              loadedPages.forEach(p => {
+                 newCanvases.push(p.c);
+                 newHistories.push(p.hist);
+              });
+          }
+        } catch (err) {
+            console.error("Failed to parse imported template JSON", err);
+        }
       }
 
-      // Default to 1 blank page for now
-      const { c, hist } = createBlankCanvas();
-      newCanvases.push(c);
-      newHistories.push(hist);
+      // If no valid json parsed or it was empty, default to 1 blank page
+      if (newCanvases.length === 0) {
+          const { c, hist } = createBlankCanvas();
+          newCanvases.push(c);
+          newHistories.push(hist);
+      }
 
       setCanvases(newCanvases);
       setHistories(newHistories);
@@ -121,12 +238,35 @@ function BuilderCanvasInner() {
     // Quick key bind for newly added canvas
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target !== document.body && (e.target as HTMLElement).tagName !== 'CANVAS') return; 
+      
       if (e.key === 'Delete' || e.key === 'Backspace') {
           const activeObjects = c.getActiveObjects();
           if (activeObjects.length) {
               activeObjects.forEach(obj => c.remove(obj));
               c.discardActiveObject();
               c.renderAll();
+          }
+      }
+      
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+          const active = c.getActiveObject();
+          if (active) {
+             active.clone((cloned: fabric.Object) => { clipboardData = cloned; });
+          }
+      }
+      
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+          if (clipboardData) {
+              clipboardData.clone((clonedObj: fabric.Object) => {
+                  c.discardActiveObject();
+                  clonedObj.set({ left: clonedObj.left! + 10, top: clonedObj.top! + 10, evented: true });
+                  if ((clipboardData as any).dataBinding) (clonedObj as any).dataBinding = (clipboardData as any).dataBinding;
+                  if ((clipboardData as any).isImagePlaceholder) (clonedObj as any).isImagePlaceholder = (clipboardData as any).isImagePlaceholder;
+                  c.add(clonedObj);
+                  clipboardData.top! += 10; clipboardData.left! += 10;
+                  c.setActiveObject(clonedObj);
+                  c.requestRenderAll();
+              });
           }
       }
     };
@@ -160,7 +300,8 @@ function BuilderCanvasInner() {
   };
 
   const handleExportConfig = () => {
-    alert("JSON Export will be fully implemented in Phase 3!");
+    const template = serializeCanvasToBrochureTemplate(canvases, 'my-custom-template', 'My Custom Template');
+    downloadJsonConfig(template);
   };
 
   return (
