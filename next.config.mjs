@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// restarting...
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
