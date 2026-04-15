@@ -7,6 +7,7 @@ import { useAppStore } from '@/lib/store';
 
 export default function BuilderLeftPanel({ canvas }: { canvas: fabric.Canvas | null }) {
   const [layers, setLayers] = useState<fabric.Object[]>([]);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!canvas) return;
@@ -50,10 +51,12 @@ export default function BuilderLeftPanel({ canvas }: { canvas: fabric.Canvas | n
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-1">
-        {[...layers].reverse().map((layer, i) => {
-          if ((layer as any).isGuide) return null; 
-
-          const isSelected = canvas?.getActiveObject() === layer;
+        {(() => {
+           const validLayers = layers.filter(l => !(l as any).isGuide);
+           if (validLayers.length === 0) return <p className="text-xs text-gray-400 text-center mt-4 border border-dashed border-gray-200 rounded-lg p-6">No objects on canvas</p>;
+           
+           return [...validLayers].reverse().map((layer, i) => {
+              const isSelected = canvas?.getActiveObject() === layer;
           const type = layer.type;
 
           let label = type;
@@ -67,8 +70,34 @@ export default function BuilderLeftPanel({ canvas }: { canvas: fabric.Canvas | n
           return (
             <div
               key={i}
+              draggable
+              onDragStart={(e) => {
+                setDraggedIndex(i);
+                // Required for Firefox
+                e.dataTransfer.setData('text/plain', i.toString());
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              onDragOver={(e) => {
+                e.preventDefault(); // Necessary to allow dropping
+                e.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (draggedIndex === null || draggedIndex === i) return;
+
+                const objToMove = validLayers[validLayers.length - 1 - draggedIndex];
+                const targetObj = validLayers[validLayers.length - 1 - i];
+                
+                const targetAbsoluteIndex = canvas!.getObjects().indexOf(targetObj);
+                
+                canvas?.moveTo(objToMove, targetAbsoluteIndex);
+                canvas?.renderAll();
+                
+                setLayers([...canvas!.getObjects()]);
+                setDraggedIndex(null);
+              }}
               onClick={() => { canvas?.setActiveObject(layer); canvas?.renderAll(); }}
-              className={`flex items-center gap-2 p-2 rounded text-xs cursor-pointer border ${isSelected ? 'bg-indigo-50 border-indigo-200 text-indigo-800 font-medium' : 'bg-white border-transparent hover:border-gray-200'}`}
+              className={`flex items-center gap-2 p-2 rounded text-xs cursor-pointer border transition-all ${isSelected ? 'bg-indigo-50 border-indigo-200 text-indigo-800 font-medium' : 'bg-white border-transparent hover:border-gray-200'} ${draggedIndex === i ? 'opacity-40 border-dashed border-indigo-300' : ''}`}
             >
               <Icon size={14} className="text-gray-500 flex-shrink-0" />
               <span className="flex-1 truncate">{label}</span>
@@ -94,14 +123,24 @@ export default function BuilderLeftPanel({ canvas }: { canvas: fabric.Canvas | n
               </button>
               <div className="flex items-center ml-1 border-l pl-1 border-gray-200">
                 <button 
-                   onClick={(e) => { e.stopPropagation(); canvas?.bringForward(layer); canvas?.renderAll(); setTick(t=>t+1); }} 
+                   onClick={(e) => { 
+                      e.stopPropagation(); 
+                      canvas?.bringForward(layer); 
+                      canvas?.renderAll(); 
+                      setLayers([...canvas!.getObjects()]); 
+                   }} 
                    className="p-1 hover:bg-gray-200 rounded shrink-0"
                    title="Bring Forward"
                 >
                   <ArrowUp size={14} className="text-gray-400" />
                 </button>
                 <button 
-                   onClick={(e) => { e.stopPropagation(); canvas?.sendBackwards(layer); canvas?.renderAll(); setTick(t=>t+1); }} 
+                   onClick={(e) => { 
+                      e.stopPropagation(); 
+                      canvas?.sendBackwards(layer); 
+                      canvas?.renderAll(); 
+                      setLayers([...canvas!.getObjects()]); 
+                   }} 
                    className="p-1 hover:bg-gray-200 rounded shrink-0"
                    title="Send Backwards"
                 >
@@ -110,8 +149,8 @@ export default function BuilderLeftPanel({ canvas }: { canvas: fabric.Canvas | n
               </div>
             </div>
           );
-        })}
-        {layers.length === 0 && <p className="text-xs text-gray-400 text-center mt-4 border border-dashed border-gray-200 rounded-lg p-6">No objects on canvas</p>}
+        })
+        })()}
       </div>
     </div>
   );
