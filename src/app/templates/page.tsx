@@ -13,6 +13,7 @@ export default function TemplatesPage() {
   const store = useAppStore();
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [allTemplates, setAllTemplates] = useState<any[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -22,9 +23,29 @@ export default function TemplatesPage() {
       return;
     }
 
-    const generatePreviews = async () => {
+    const loadAndRenderTemplates = async () => {
       setLoading(true);
       const newPreviews: Record<string, string> = {};
+      
+      let fetchedTemplates: any[] = [];
+      try {
+        const res = await fetch('/api/templates');
+        if (res.ok) {
+           const dbTemplates = await res.json();
+           fetchedTemplates = dbTemplates.map((dt: any) => {
+              const parsed = JSON.parse(dt.configJson);
+              parsed.id = dt.id;
+              parsed.name = dt.name;
+              parsed.isCustom = true;
+              return parsed;
+           });
+        }
+      } catch (err) {
+        console.warn("Failed to fetch custom DB templates", err);
+      }
+      
+      const combinedTemplates = [...templates, ...fetchedTemplates];
+      setAllTemplates(combinedTemplates);
       
       // We need a dummy canvas element to instantiate fabric.Canvas
       const canvasEl = document.createElement('canvas');
@@ -32,7 +53,7 @@ export default function TemplatesPage() {
       canvasEl.height = 842;
       const fCanvas = new fabric.Canvas(canvasEl);
 
-      for (const t of templates) {
+      for (const t of combinedTemplates) {
         try {
           const renderedPages = await renderTemplate(t, store.propertyData);
           if (renderedPages.length > 0) {
@@ -60,7 +81,7 @@ export default function TemplatesPage() {
       setLoading(false);
     };
 
-    generatePreviews();
+    loadAndRenderTemplates();
   }, [store.propertyData.title]);
 
   const handleOpenEditor = () => {
@@ -105,7 +126,7 @@ export default function TemplatesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {templates.map((t) => {
+            {allTemplates.map((t) => {
               const isSelected = store.selectedTemplateId === t.id;
               return (
                 <div 
@@ -126,10 +147,10 @@ export default function TemplatesPage() {
                   
                   <div className="p-4 bg-white flex flex-col justify-between flex-1">
                     <div>
-                      <h3 className="text-sm font-bold text-gray-900">{t.name}</h3>
+                      <h3 className="text-sm font-bold text-gray-900">{t.name} {t.isCustom && '(DB Custom)'}</h3>
                       <div className="mt-1 flex">
                         <span className="inline-block bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full border border-gray-200 uppercase tracking-wider">
-                          {t.mood}
+                          {t.mood || 'custom layout'}
                         </span>
                       </div>
                     </div>

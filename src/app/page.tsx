@@ -23,7 +23,14 @@ export default function Home() {
             href="/create?demo=true"
             className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-8 rounded-lg transition-colors border border-gray-200 shadow-sm"
           >
-            Try Demo
+            Try Fast Demo
+          </Link>
+          
+          <Link 
+            href="/properties"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors shadow-sm"
+          >
+            Load from DB (Seeded)
           </Link>
         </div>
         

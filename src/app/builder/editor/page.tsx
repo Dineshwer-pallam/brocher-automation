@@ -299,9 +299,35 @@ function BuilderCanvasInner() {
     }
   };
 
-  const handleExportConfig = () => {
-    const template = serializeCanvasToBrochureTemplate(canvases, 'my-custom-template', 'My Custom Template');
-    downloadJsonConfig(template);
+  const handleExportConfig = async () => {
+    const templateName = prompt("Enter a name for this Custom Template:", "My Custom Template");
+    if (!templateName) return;
+
+    const template = serializeCanvasToBrochureTemplate(canvases, 'custom-' + Date.now(), templateName);
+    const configStr = JSON.stringify(template);
+
+    try {
+      const res = await fetch('/api/templates', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+            name: templateName,
+            description: "Custom template built with visual layout editor",
+            configJson: configStr
+         })
+      });
+
+      if (res.ok) {
+         if (confirm("Template saved successfully to the database! Would you also like to download the raw JSON file as backup?")) {
+             downloadJsonConfig(template);
+         }
+      } else {
+         alert("Failed to save template to database.");
+      }
+    } catch(e) {
+      console.error(e);
+      alert("Error saving template.");
+    }
   };
 
   return (

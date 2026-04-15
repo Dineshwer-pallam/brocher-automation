@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Property {
+  id          String   @id @default(cuid())
+  title       String
+  type        String
+  price       Float
+  bedrooms    Int
+  bathrooms   Int
+  area        Float?
+  address     String
+  description String
+
+  // Use JSON string for storing arrays in SQLite prototyping
+  images      String   @default("[]")
+  
+  agentName   String?
+  agentPhone  String?
+  agentEmail  String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  configJson  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
