@@ -189,16 +189,19 @@ export default function EditorPage() {
 
           {/* Grid Overlay Handle logic - if on, show grid using background pattern on the wrapper */}
           <div 
-             ref={mountRootRef}
-             className="relative transition-transform duration-200 origin-center shadow-xl will-change-transform"
-             style={{ 
-               transform: `scale(${store.zoom})`, 
-               width: 595, height: 842,
-               backgroundImage: store.showGrid ? 'linear-gradient(to right, #ccc 1px, transparent 1px), linear-gradient(to bottom, #ccc 1px, transparent 1px)' : 'none',
-               backgroundSize: '20px 20px',
-               backgroundColor: 'white' // base fallback
-             }}
+             className="relative transition-transform duration-200 origin-center shadow-xl will-change-transform bg-white"
+             style={{ transform: `scale(${store.zoom})`, width: 595, height: 842 }}
           >
+             <div ref={mountRootRef} className="absolute inset-0"></div>
+             {store.showGrid && (
+                <div 
+                   className="absolute inset-0 pointer-events-none z-[100]" 
+                   style={{ 
+                      backgroundImage: 'linear-gradient(to right, rgba(0, 0, 0, 0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 1px, transparent 1px)', 
+                      backgroundSize: '20px 20px' 
+                   }}
+                ></div>
+             )}
           </div>
 
         </div>

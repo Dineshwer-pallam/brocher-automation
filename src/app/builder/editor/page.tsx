@@ -322,16 +322,19 @@ function BuilderCanvasInner() {
           )}
 
           <div 
-             ref={mountRootRef}
-             className="relative transition-transform duration-200 origin-center shadow-xl will-change-transform"
-             style={{ 
-               transform: `scale(${store.zoom})`, 
-               width, height,
-               backgroundImage: store.showGrid ? 'linear-gradient(to right, #ccc 1px, transparent 1px), linear-gradient(to bottom, #ccc 1px, transparent 1px)' : 'none',
-               backgroundSize: '20px 20px',
-               backgroundColor: 'white'
-             }}
+             className="relative transition-transform duration-200 origin-center shadow-xl will-change-transform bg-white"
+             style={{ transform: `scale(${store.zoom})`, width, height }}
           >
+             <div ref={mountRootRef} className="absolute inset-0"></div>
+             {store.showGrid && (
+                <div 
+                   className="absolute inset-0 pointer-events-none z-[100]" 
+                   style={{ 
+                      backgroundImage: 'linear-gradient(to right, rgba(0, 0, 0, 0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 1px, transparent 1px)', 
+                      backgroundSize: '20px 20px' 
+                   }}
+                ></div>
+             )}
           </div>
         </div>
 
