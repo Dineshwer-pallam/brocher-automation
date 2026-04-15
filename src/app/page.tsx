@@ -10,20 +10,31 @@ export default function Home() {
         Create stunning property brochures in minutes. No design skills required.
       </p>
       
-      <div className="flex gap-4">
-        <Link 
-          href="/create"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors border border-transparent shadow-sm"
-        >
-          Create New Brochure
-        </Link>
+      <div className="flex flex-col gap-4 items-center">
+        <div className="flex gap-4">
+          <Link 
+            href="/create"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors border border-transparent shadow-sm"
+          >
+            Create New Brochure
+          </Link>
+          
+          <Link 
+            href="/create?demo=true"
+            className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-8 rounded-lg transition-colors border border-gray-200 shadow-sm"
+          >
+            Try Demo
+          </Link>
+        </div>
         
-        <Link 
-          href="/create?demo=true"
-          className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-8 rounded-lg transition-colors border border-gray-200 shadow-sm"
-        >
-          Try Demo
-        </Link>
+        <div className="mt-4 pt-4 border-t border-gray-200 w-full">
+          <Link 
+            href="/builder"
+            className="bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-8 rounded-lg transition-colors border border-transparent shadow-sm inline-block"
+          >
+            Design Custom Template
+          </Link>
+        </div>
       </div>
     </main>
   );
