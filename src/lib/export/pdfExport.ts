@@ -1,11 +1,18 @@
 import jsPDF from 'jspdf';
 import { fabric } from 'fabric';
 
-export async function exportToPDF(canvases: fabric.Canvas[], fileName?: string) {
+interface PDFExportOptions {
+  width: number;
+  height: number;
+}
+
+export async function exportToPDF(canvases: fabric.Canvas[], fileName?: string, options: PDFExportOptions = { width: 595, height: 842 }) {
+  const orientation = options.width > options.height ? 'landscape' : 'portrait';
+  
   const pdf = new jsPDF({
-    orientation: 'portrait',
+    orientation: orientation,
     unit: 'pt',
-    format: 'a4'
+    format: [options.width, options.height]
   });
 
   for (let i = 0; i < canvases.length; i++) {
@@ -23,9 +30,8 @@ export async function exportToPDF(canvases: fabric.Canvas[], fileName?: string) 
       pdf.addPage();
     }
 
-    // A4 dimensions in pt: 595.28 x 841.89
-    // Our canvas base is exactly 595x842
-    pdf.addImage(dataUrl, 'PNG', 0, 0, 595, 842);
+    // Apply the exact canvas dimensions to the PDF image render
+    pdf.addImage(dataUrl, 'PNG', 0, 0, options.width, options.height);
   }
 
   pdf.save(fileName || 'property-brochure.pdf');

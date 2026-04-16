@@ -475,7 +475,7 @@ function BuilderCanvasInner() {
     
     try {
       await processWithLiveData(canvases, propertyToUse, async () => {
-        await exportToPDF(canvases, `${propertyToUse.title?.replace(/\s+/g, '-') || 'brochure'}.pdf`);
+        await exportToPDF(canvases, `${propertyToUse.title?.replace(/\s+/g, '-') || 'brochure'}.pdf`, { width, height });
       });
       alert('PDF Downloaded successfully!');
     } catch(e) {
@@ -583,6 +583,8 @@ function BuilderCanvasInner() {
           selectedPropertyId={selectedPreviewPropertyId}
           onSelectProperty={changePreviewProperty}
           isGenerating={isGenerating}
+          width={width}
+          height={height}
           onClose={() => setShowPreview(false)} 
           onDownload={() => {
              setShowPreview(false);

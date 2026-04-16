@@ -8,9 +8,11 @@ interface PreviewModalProps {
   selectedPropertyId?: string;
   onSelectProperty?: (propId: string) => void;
   isGenerating?: boolean;
+  width: number;
+  height: number;
 }
 
-export default function PreviewModal({ onClose, onDownload, dataUrls, properties = [], selectedPropertyId, onSelectProperty, isGenerating }: PreviewModalProps) {
+export default function PreviewModal({ onClose, onDownload, dataUrls, properties = [], selectedPropertyId, onSelectProperty, isGenerating, width, height }: PreviewModalProps) {
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex flex-col backdrop-blur-sm animate-in fade-in duration-200">
       
@@ -63,7 +65,10 @@ export default function PreviewModal({ onClose, onDownload, dataUrls, properties
           dataUrls.map((url, i) => (
             <div key={i} className="flex flex-col items-center gap-4 shrink-0 transition-opacity animate-in fade-in">
               <span className="text-gray-400 font-mono text-sm tracking-widest uppercase">Page {i + 1}</span>
-              <div className="bg-white rounded shadow-2xl overflow-hidden aspect-[595/842] h-[50vh] md:h-[70vh] pointer-events-none">
+              <div 
+                 className="bg-white rounded shadow-2xl overflow-hidden h-[50vh] md:h-[70vh] pointer-events-none"
+                 style={{ aspectRatio: `${width}/${height}` }}
+              >
                 <img src={url} alt={`Page ${i+1}`} className="w-full h-full object-contain bg-white" />
               </div>
             </div>
