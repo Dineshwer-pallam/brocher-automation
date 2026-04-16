@@ -14,6 +14,9 @@ import PreviewModal from '@/components/editor/PreviewModal';
 import { serializeCanvasToBrochureTemplate, downloadJsonConfig } from '@/lib/export/jsonExport';
 import { processWithLiveData } from '@/lib/fabric/dataInjector';
 import { getPlaceholderDataURL } from '@/components/builder/utils';
+import renderTemplate from '@/lib/fabric/templateRenderer';
+import { exportToPDF } from '@/lib/export/pdfExport';
+import { templates } from '@/lib/templates';
 
 // Global clipboard for cross-page copy-paste in this session
 let clipboardData: fabric.Object | null = null;
@@ -30,6 +33,7 @@ function BuilderCanvasInner() {
   // Preview Modal State
   const [showPreview, setShowPreview] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [dbProperties, setDbProperties] = useState<any[]>([]);
   const [selectedPreviewPropertyId, setSelectedPreviewPropertyId] = useState<string>('');
@@ -51,6 +55,27 @@ function BuilderCanvasInner() {
       setLoading(true);
 
       const jsonStr = sessionStorage.getItem('importedTemplate');
+      let presetTemplate = null;
+
+      // If came from property selection workflow
+      if (store.selectedTemplateId && store.propertyData.title) {
+         // Attempt to fetch from DB templates first, or fallback to static templates
+         try {
+            const res = await fetch('/api/templates');
+            if (res.ok) {
+               const dbTemplates = await res.json();
+               const tpl = dbTemplates.find((t: any) => t.id === store.selectedTemplateId);
+               if (tpl) {
+                  presetTemplate = JSON.parse(tpl.configJson);
+                  presetTemplate.id = tpl.id;
+               }
+            }
+         } catch (e) {}
+         
+         if (!presetTemplate) {
+            presetTemplate = templates.find(t => t.id === store.selectedTemplateId) || null;
+         }
+      }
       
       const newCanvases: fabric.Canvas[] = [];
       const newHistories: CanvasHistory[] = [];
@@ -122,7 +147,26 @@ function BuilderCanvasInner() {
         return { c, hist };
       };
 
-      if (jsonStr) {
+      if (presetTemplate) {
+        try {
+          const renderedPages = await renderTemplate(presetTemplate, store.propertyData);
+          
+          for (let i = 0; i < renderedPages.length; i++) {
+             const rp = renderedPages[i];
+             const { c, hist } = createBlankCanvas();
+             c.backgroundColor = rp.background || '#ffffff';
+             
+             for (const obj of rp.objects) {
+                 c.add(obj);
+             }
+             c.renderAll();
+             newCanvases.push(c);
+             newHistories.push(hist);
+          }
+        } catch (err) {
+           console.error("Failed to render preset template", err);
+        }
+      } else if (jsonStr) {
         try {
           const template = JSON.parse(jsonStr);
           const promises = template.pages.map(async (page: any) => {
@@ -248,6 +292,11 @@ function BuilderCanvasInner() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target !== document.body && (e.target as HTMLElement).tagName !== 'CANVAS') return; 
       
+      // Do not intercept if typing in a browser input or editing text on canvas
+      const targetTag = (e.target as HTMLElement)?.tagName?.toUpperCase();
+      if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT') return;
+      if (c.getActiveObject()?.isEditing) return;
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
           const activeObjects = c.getActiveObjects();
           if (activeObjects.length) {
@@ -260,7 +309,7 @@ function BuilderCanvasInner() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
           const active = c.getActiveObject();
           if (active) {
-             active.clone((cloned: fabric.Object) => { clipboardData = cloned; });
+             active.clone((cloned: fabric.Object) => { clipboardData = cloned; }, ['dataBinding', 'isImagePlaceholder', 'dataKey']);
           }
       }
       
@@ -270,13 +319,31 @@ function BuilderCanvasInner() {
                   c.discardActiveObject();
                   clonedObj.set({ left: clonedObj.left! + 10, top: clonedObj.top! + 10, evented: true });
                   if ((clipboardData as any).dataBinding) (clonedObj as any).dataBinding = (clipboardData as any).dataBinding;
+                  if ((clipboardData as any).dataKey) (clonedObj as any).dataKey = (clipboardData as any).dataKey;
                   if ((clipboardData as any).isImagePlaceholder) (clonedObj as any).isImagePlaceholder = (clipboardData as any).isImagePlaceholder;
                   c.add(clonedObj);
-                  clipboardData.top! += 10; clipboardData.left! += 10;
+                  clipboardData.set({ top: clipboardData.top! + 10, left: clipboardData.left! + 10 });
                   c.setActiveObject(clonedObj);
                   c.requestRenderAll();
               });
           }
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) {
+             hist.redo();
+          } else {
+             hist.undo();
+          }
+          // Force active component updates
+          setHistories(hists => [...hists]); 
+      }
+      
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          hist.redo();
+          setHistories(hists => [...hists]);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -327,9 +394,7 @@ function BuilderCanvasInner() {
       });
 
       if (res.ok) {
-         if (confirm("Template saved successfully to the database! Would you also like to download the raw JSON file as backup?")) {
-             downloadJsonConfig(template);
-         }
+         alert("Template saved successfully to the database!");
       } else {
          alert("Failed to save template to database.");
       }
@@ -337,6 +402,13 @@ function BuilderCanvasInner() {
       console.error(e);
       alert("Error saving template.");
     }
+  };
+
+  const handleExportJSON = () => {
+    const templateName = prompt("Enter a filename for your JSON backup:", "My Custom Template");
+    if (!templateName) return;
+    const template = serializeCanvasToBrochureTemplate(canvases, 'custom-' + Date.now(), templateName);
+    downloadJsonConfig(template);
   };
 
   const fetchDbPropertiesIfEmpty = async () => {
@@ -371,6 +443,34 @@ function BuilderCanvasInner() {
           company: { name: '', website: '', logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png', logoFile: null },
           images: images
       };
+  };
+
+  const runExport = async () => {
+    setExporting(true);
+    let propertyToUse = store.propertyData;
+    
+    // If no property data exists in global state (they are purely building a template), use a dummy
+    if (!propertyToUse.title) {
+       const props = await fetchDbPropertiesIfEmpty();
+       if (props && props.length > 0) {
+           propertyToUse = constructPropertyDataFromDb(props[0]);
+       } else {
+           alert("You need to select a property first to generate a PDF.");
+           setExporting(false);
+           return;
+       }
+    }
+    
+    try {
+      await processWithLiveData(canvases, propertyToUse, async () => {
+        await exportToPDF(canvases, `${propertyToUse.title?.replace(/\s+/g, '-') || 'brochure'}.pdf`);
+      });
+      alert('PDF Downloaded successfully!');
+    } catch(e) {
+      alert('PDF export failed. Check console.');
+      console.error(e);
+    }
+    setExporting(false);
   };
 
   const handleGeneratePreview = async (propObj: any) => {
@@ -414,7 +514,14 @@ function BuilderCanvasInner() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50 text-gray-900">
       
-      <BuilderTopToolbar canvas={activeCanvas} history={activeHistory} onPreview={runPreview} onExportConfig={handleExportConfig} />
+      <BuilderTopToolbar 
+        canvas={activeCanvas} 
+        history={activeHistory} 
+        onPreview={runPreview} 
+        onExportConfig={handleExportConfig} 
+        onDownloadJSON={handleExportJSON}
+        onDownloadPDF={runExport} 
+      />
 
       <div className="flex-1 flex overflow-hidden">
         
@@ -423,8 +530,11 @@ function BuilderCanvasInner() {
         {/* Canvas Area */}
         <div ref={canvasContainerRef} className="flex-1 overflow-auto bg-[#e5e5e5] relative flex items-center justify-center p-10">
           {loading && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#e5e5e5]/80 backdrop-blur-sm">
-              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+             <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#e5e5e5]/80 backdrop-blur-sm">
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="font-medium text-gray-700">Loading builder...</p>
+              </div>
             </div>
           )}
 
@@ -463,10 +573,20 @@ function BuilderCanvasInner() {
           isGenerating={isGenerating}
           onClose={() => setShowPreview(false)} 
           onDownload={() => {
-            setShowPreview(false);
-            alert("This is the Builder! Real PDF export happens in the Main Editor. Save your template first via Export JSON.");
+             setShowPreview(false);
+             runExport();
           }} 
         />
+      )}
+
+      {exporting && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center backdrop-blur-sm">
+           <div className="bg-white px-8 py-6 rounded-lg shadow-2xl flex flex-col items-center">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+              <h3 className="font-bold text-gray-900 text-lg">Generating PDF</h3>
+              <p className="text-gray-500 text-sm mt-1">Please wait, compiling high-resolution pages...</p>
+           </div>
+        </div>
       )}
 
     </div>

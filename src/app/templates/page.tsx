@@ -86,7 +86,7 @@ export default function TemplatesPage() {
 
   const handleOpenEditor = () => {
     if (store.selectedTemplateId) {
-      router.push('/editor');
+      router.push('/builder/editor');
     }
   };
 

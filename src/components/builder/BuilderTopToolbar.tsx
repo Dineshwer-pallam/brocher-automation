@@ -13,13 +13,26 @@ type BuilderTopToolbarProps = {
   history: CanvasHistory | null;
   onPreview: () => void;
   onExportConfig: () => void;
+  onDownloadJSON: () => void;
+  onDownloadPDF?: () => void;
 };
 
-export default function BuilderTopToolbar({ canvas, history, onPreview, onExportConfig }: BuilderTopToolbarProps) {
+export default function BuilderTopToolbar({ canvas, history, onPreview, onExportConfig, onDownloadJSON, onDownloadPDF }: BuilderTopToolbarProps) {
   const store = useAppStore();
   const [showShapePopover, setShowShapePopover] = useState(false);
   const [showVarPopover, setShowVarPopover] = useState(false);
   const [showImgPopover, setShowImgPopover] = useState(false);
+  const [historyTick, setHistoryTick] = useState(0);
+
+  const handleUndo = () => {
+     if (history) history.undo();
+     setHistoryTick(t => t + 1);
+  };
+  
+  const handleRedo = () => {
+     if (history) history.redo();
+     setHistoryTick(t => t + 1);
+  };
 
   const textVariables = [
     { label: 'Address', tag: '{{address}}' },
@@ -124,7 +137,7 @@ export default function BuilderTopToolbar({ canvas, history, onPreview, onExport
           </Link>
           <div className="w-px h-6 bg-gray-200 mx-1"></div>
           <button 
-            onClick={history ? () => history.undo() : undefined} 
+            onClick={handleUndo} 
             disabled={!history || !history.canUndo()}
             className="p-1.5 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed" 
             title="Undo (Ctrl+Z)"
@@ -132,7 +145,7 @@ export default function BuilderTopToolbar({ canvas, history, onPreview, onExport
             <Undo2 size={18} />
           </button>
           <button 
-            onClick={history ? () => history.redo() : undefined} 
+            onClick={handleRedo} 
             disabled={!history || !history.canRedo()}
             className="p-1.5 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed" 
             title="Redo (Ctrl+Y)"
@@ -226,9 +239,17 @@ export default function BuilderTopToolbar({ canvas, history, onPreview, onExport
         <button onClick={onPreview} className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium text-sm px-4 py-2 rounded flex items-center gap-2 transition-colors shadow-sm">
           <span>👀</span> Live Preview
         </button>
-        <button onClick={onExportConfig} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-4 py-2 rounded flex items-center gap-2 transition-colors shadow-sm">
-          <Download size={16} /> Export JSON
+        <button onClick={onExportConfig} className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-4 py-2 rounded flex items-center gap-2 transition-colors shadow-sm" title="Save as reusable Template to Database">
+          <Download size={16} /> Save Template
         </button>
+        <button onClick={onDownloadJSON} className="bg-slate-700 hover:bg-slate-800 text-white font-medium text-sm px-4 py-2 rounded flex items-center gap-2 transition-colors shadow-sm" title="Download property JSON config locally">
+           <Braces size={16} /> Export JSON
+        </button>
+        {onDownloadPDF && (
+          <button onClick={onDownloadPDF} className="bg-red-600 hover:bg-red-700 text-white font-medium text-sm px-4 py-2 rounded flex items-center gap-2 transition-colors shadow-sm" title="Download Property Brochure as PDF">
+             <Download size={16} /> Download PDF
+          </button>
+        )}
       </div>
     </div>
   );

@@ -20,6 +20,13 @@ const ALL_BINDINGS = [
   '{{company_name}}', '{{company_website}}', '{{company_logo}}'
 ];
 
+const IMAGE_BINDINGS = [
+  '{{hero_image}}', '{{gallery_1}}', '{{gallery_2}}', '{{gallery_3}}', '{{gallery_4}}',
+  '{{gallery_5}}', '{{gallery_6}}', '{{gallery_7}}', '{{gallery_8}}',
+  '{{floorplan}}', '{{epc_1}}', '{{epc_2}}',
+  '{{agent_photo}}', '{{company_logo}}'
+];
+
 export default function BuilderRightPanel({ canvas, width, height }: { canvas: fabric.Canvas | null, width: number, height: number }) {
   const store = useAppStore();
   const [activeObj, setActiveObj] = useState<fabric.Object | null>(null);
@@ -57,12 +64,19 @@ export default function BuilderRightPanel({ canvas, width, height }: { canvas: f
     if (activeObj && canvas) {
       activeObj.set(key, value);
       
+      // Keep dataKey in sync with dataBinding for compatibility with older renderer functions
+      if (key === 'dataBinding') {
+         activeObj.set('dataKey', value);
+      }
+      
       // Dynamic SVG generation if updating dataBinding on an ImagePlaceholder
       if (key === 'dataBinding' && (activeObj as any).isImagePlaceholder) {
-         const w = (activeObj.width || 200);
-         const h = (activeObj.height || 150);
+         const w = Math.round((activeObj.width || 200) * (activeObj.scaleX || 1));
+         const h = Math.round((activeObj.height || 150) * (activeObj.scaleY || 1));
          const dataUrl = getPlaceholderDataURL(w, h, value || 'Image Placeholder');
          (activeObj as fabric.Image).setSrc(dataUrl, () => {
+             activeObj.set({ width: w, height: h, scaleX: 1, scaleY: 1 });
+             activeObj.setCoords();
              canvas.requestRenderAll();
              setTick(t => t + 1);
          });
@@ -115,27 +129,25 @@ export default function BuilderRightPanel({ canvas, width, height }: { canvas: f
   return (
     <div className="w-72 bg-white border-l h-full p-4 overflow-y-auto hidden-scrollbar flex flex-col gap-6">
       
-      {/* DATA BINDING SECTION (Crucial for Builder) */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
-        <h3 className="text-xs font-bold uppercase text-indigo-800 mb-2 tracking-wider flex items-center gap-2">
-           <Database size={14} /> Data Binding
-        </h3>
-        <p className="text-[10px] text-indigo-600 mb-2 leading-tight">
-           Select a variable to dynamically inject real estate data into this placeholder.
-        </p>
-        <select
-           value={(activeObj as any).dataBinding || ''}
-           onChange={(e) => updateProp('dataBinding', e.target.value)}
-           className="w-full border-indigo-200 text-indigo-900 rounded text-xs px-2 py-1.5 outline-none bg-white font-mono"
-        >
-           <option value="">-- No Data Binding --</option>
-           {ALL_BINDINGS.map(b => <option key={b} value={b}>{b}</option>)}
-        </select>
-        {isText && (activeObj as any).dataBinding && (
-          <p className="text-[9px] text-indigo-500 mt-1">Hint: Textboxes can also type bindings inline like &quot;Asking {`{{price}}`}&quot;.</p>
-        )}
-      </div>
-
+      {/* DATA BINDING SECTION (Crucial for Builder, ONLY FOR IMAGES NOW) */}
+      {isImage && (
+        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+          <h3 className="text-xs font-bold uppercase text-indigo-800 mb-2 tracking-wider flex items-center gap-2">
+             <Database size={14} /> Data Binding
+          </h3>
+          <p className="text-[10px] text-indigo-600 mb-2 leading-tight">
+             Select a variable to dynamically inject real estate images into this placeholder.
+          </p>
+          <select
+             value={(activeObj as any).dataBinding || ''}
+             onChange={(e) => updateProp('dataBinding', e.target.value)}
+             className="w-full border-indigo-200 text-indigo-900 rounded text-xs px-2 py-1.5 outline-none bg-white font-mono"
+          >
+             <option value="">-- No Data Binding --</option>
+             {IMAGE_BINDINGS.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+        </div>
+      )}
 
       {/* STANDARD STYLING */}
       <div>

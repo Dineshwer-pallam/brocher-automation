@@ -18,18 +18,13 @@ function formatArea(area: number, unit: string): string {
   return `${formatted} ${unit === 'sqft' ? 'sq ft' : 'sq m'}`;
 }
 
-async function loadImage(url: string, placeholderDims?: { w: number, h: number }): Promise<fabric.Image> {
+import { getPlaceholderDataURL } from '@/components/builder/utils';
+
+async function loadImage(url: string, placeholderDims?: { w: number, h: number }, tag?: string): Promise<fabric.Image> {
   return new Promise((resolve) => {
     const createPlaceholder = () => {
-         const canvas = document.createElement('canvas');
-         canvas.width = placeholderDims?.w || 200;
-         canvas.height = placeholderDims?.h || 200;
-         const ctx = canvas.getContext('2d');
-         if (ctx) {
-             ctx.fillStyle = '#cccccc';
-             ctx.fillRect(0,0, canvas.width, canvas.height);
-         }
-         fabric.Image.fromURL(canvas.toDataURL(), (fallbackImg) => {
+         const dataUrl = getPlaceholderDataURL(placeholderDims?.w || 200, placeholderDims?.h || 200, tag || 'Image');
+         fabric.Image.fromURL(dataUrl, (fallbackImg) => {
             resolve(fallbackImg);
          });
     };
@@ -89,15 +84,14 @@ export default async function renderTemplate(template: BrochureTemplate, propert
         renderedObjects.push(textObj);
       } 
       else if (obj.type === 'image') {
-        const imgObj = await loadImage(urlToLoad, { w: obj.width || 100, h: obj.height || 100 });
+        const isPlaceholderUrl = (typeof obj.dataBinding === 'string' && obj.dataBinding.startsWith('{{')) || !urlToLoad;
+        const imgObj = await loadImage(urlToLoad, { w: obj.width || 100, h: obj.height || 100 }, obj.dataBinding as string);
         
         // Scale to fit defined bounds appropriately
         if (imgObj.type === 'image' && obj.width && obj.height) {
            const scaleX = obj.width / (imgObj.width || 1);
            const scaleY = obj.height / (imgObj.height || 1);
            
-           // If we want cover, we'd scale max and crop. For simplicity, just stretch or fit.
-           // Usually template implies exact bounds, so we just scale x & y
            imgObj.set({
              scaleX,
              scaleY
@@ -109,6 +103,11 @@ export default async function renderTemplate(template: BrochureTemplate, propert
           top: obj.top,
           dataKey: obj.dataBinding,
         } as any);
+        
+        if (isPlaceholderUrl) {
+           (imgObj as any).isImagePlaceholder = true;
+           (imgObj as any).dataBinding = obj.dataBinding;
+        }
 
         // Add rx ry if specified (border radius). We handle this by setting clipPath in fabric v6 if it's an image
         if (obj.rx && obj.ry && imgObj.type === 'image') {
