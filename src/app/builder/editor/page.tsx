@@ -21,6 +21,18 @@ import { templates } from '@/lib/templates';
 // Global clipboard for cross-page copy-paste in this session
 let clipboardData: fabric.Object | null = null;
 
+// Globally enhance selection UI to be highly visible and modern
+fabric.Object.prototype.set({
+  transparentCorners: false,
+  borderColor: '#2563eb', // Blue-600
+  cornerColor: '#ffffff',
+  cornerStrokeColor: '#2563eb',
+  cornerSize: 8,
+  cornerStyle: 'circle',
+  borderScaleFactor: 1.5, // Crisp, thin border
+  padding: 0 // Tight bounding box without spacing
+});
+
 function BuilderCanvasInner() {
   const router = useRouter();
   const searchParams = useSearchParams();

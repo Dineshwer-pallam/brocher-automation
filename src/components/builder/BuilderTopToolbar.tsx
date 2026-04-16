@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore } from '@/lib/store';
-import { ArrowLeft, Undo2, Redo2, Type, ImagePlus, Square, Circle as CircleIcon, Minus, Download, Braces } from 'lucide-react';
+import { ArrowLeft, Undo2, Redo2, Type, ImagePlus, Square, Circle as CircleIcon, Minus, Download, Braces, Smile } from 'lucide-react';
 import { fabric } from 'fabric';
 import { CanvasHistory } from '@/lib/fabric/history';
 import { useState } from 'react';
@@ -22,6 +22,7 @@ export default function BuilderTopToolbar({ canvas, history, onPreview, onExport
   const [showShapePopover, setShowShapePopover] = useState(false);
   const [showVarPopover, setShowVarPopover] = useState(false);
   const [showImgPopover, setShowImgPopover] = useState(false);
+  const [showEmojiPopover, setShowEmojiPopover] = useState(false);
   const [historyTick, setHistoryTick] = useState(0);
 
   const handleUndo = () => {
@@ -72,6 +73,19 @@ export default function BuilderTopToolbar({ canvas, history, onPreview, onExport
     { label: 'EPC graph 2', tag: '{{epc_2}}' },
     { label: 'Agent Photo', tag: '{{agent_photo}}' },
     { label: 'Company Logo', tag: '{{company_logo}}' }
+  ];
+
+  const SVG_ICONS = [
+    { name: 'Bed', viewBox: '0 0 24 24', path: '<path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+    { name: 'Bath', viewBox: '0 0 24 24', path: '<path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5M10 5V3M14 5V3M18 5V3M2 12h20M5 22l2-3M19 22l-2-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+    { name: 'Square Foot', viewBox: '0 0 24 24', path: '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+    { name: 'Car', viewBox: '0 0 24 24', path: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2M7 17h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+    { name: 'Map Pin', viewBox: '0 0 24 24', path: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+    { name: 'Phone', viewBox: '0 0 24 24', path: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+    { name: 'Mail', viewBox: '0 0 24 24', path: '<rect width="20" height="16" x="2" y="4" rx="2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+    { name: 'Check', viewBox: '0 0 24 24', path: '<polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+    { name: 'Globe', viewBox: '0 0 24 24', path: '<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12h20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+    { name: 'Sofa', viewBox: '0 0 24 24', path: '<path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 18v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 18v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' }
   ];
 
   const addVariableText = (tag: string) => {
@@ -126,6 +140,31 @@ export default function BuilderTopToolbar({ canvas, history, onPreview, onExport
     canvas.setActiveObject(shape);
     canvas.renderAll();
     setShowShapePopover(false);
+  };
+
+  const addSvgIcon = (icon: any) => {
+    if (!canvas) return;
+    
+    // Create a generic SVG wrapper around the raw path
+    const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${icon.viewBox}">${icon.path}</svg>`;
+    
+    fabric.loadSVGFromString(svgStr, (objects, options) => {
+      const obj = fabric.util.groupSVGElements(objects, options);
+      obj.set({
+        left: 247.5,
+        top: 400,
+        fill: '#ba1c21', 
+        stroke: '#ba1c21',
+        originX: 'center',
+        originY: 'center',
+      });
+      obj.scaleToHeight(32); // Reasonable default SVG scale
+      
+      canvas.add(obj);
+      canvas.setActiveObject(obj);
+      canvas.renderAll();
+      setShowEmojiPopover(false);
+    });
   };
 
   return (
@@ -230,6 +269,33 @@ export default function BuilderTopToolbar({ canvas, history, onPreview, onExport
                 </button>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Emojis Popover */}
+        <div className="relative">
+          <button 
+            onClick={() => setShowEmojiPopover(!showEmojiPopover)} 
+            className="p-1.5 text-gray-700 hover:bg-white hover:shadow-sm rounded flex items-center justify-center w-9 h-9 transition-all" 
+            title="Add Emoji"
+          >
+            <Smile size={18} />
+          </button>
+          {showEmojiPopover && (
+             <div className="absolute top-12 left-0 bg-white border shadow-lg rounded-md p-2 w-72 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="grid grid-cols-5 gap-2">
+                   {SVG_ICONS.map(icon => (
+                     <button 
+                        key={icon.name} 
+                        onClick={() => addSvgIcon(icon)} 
+                        title={`Add ${icon.name} Icon`}
+                        className="w-10 h-10 flex items-center justify-center hover:bg-gray-100 rounded transition group"
+                     >
+                       <svg xmlns="http://www.w3.org/2000/svg" viewBox={icon.viewBox} className="w-5 h-5 text-gray-700 group-hover:text-blue-600 transition-colors" dangerouslySetInnerHTML={{ __html: icon.path }} />
+                     </button>
+                   ))}
+                </div>
+             </div>
           )}
         </div>
 
