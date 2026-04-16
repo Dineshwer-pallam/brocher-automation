@@ -1,7 +1,7 @@
 "use client";
 
 import { useAppStore } from '@/lib/store';
-import { ArrowLeft, Undo2, Redo2, Type, ImagePlus, Square, Circle as CircleIcon, Minus, Eye, Download, Braces } from 'lucide-react';
+import { ArrowLeft, Undo2, Redo2, Type, ImagePlus, Square, Circle as CircleIcon, Minus, Eye, Download, Braces, Save } from 'lucide-react';
 import { fabric } from 'fabric';
 import { CanvasHistory } from '@/lib/fabric/history';
 import { useState } from 'react';
@@ -11,9 +11,10 @@ type TopToolbarProps = {
   history: CanvasHistory | null;
   onPreview: () => void;
   onDownload: () => void;
+  onExportConfig?: () => void;
 };
 
-export default function TopToolbar({ canvas, history, onPreview, onDownload }: TopToolbarProps) {
+export default function TopToolbar({ canvas, history, onPreview, onDownload, onExportConfig }: TopToolbarProps) {
   const store = useAppStore();
   const [showImgPopover, setShowImgPopover] = useState(false);
   const [showShapePopover, setShowShapePopover] = useState(false);
@@ -199,6 +200,15 @@ export default function TopToolbar({ canvas, history, onPreview, onDownload }: T
       </div>
 
       <div className="flex items-center gap-2">
+        {onExportConfig && (
+          <button 
+            onClick={onExportConfig} 
+            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded flex items-center justify-center border border-transparent hover:border-gray-200 gap-2 transition-colors mr-1" 
+            title="Export to Template"
+          >
+            <Save size={16} /> <span className="text-sm font-medium">Export</span>
+          </button>
+        )}
         <button onClick={onPreview} className="p-1.5 text-gray-600 hover:bg-gray-100 rounded flex items-center justify-center" title="Preview">
           <Eye size={18} />
         </button>

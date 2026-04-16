@@ -17,6 +17,10 @@ import { CanvasHistory } from '@/lib/fabric/history';
 import { initSmartGuides } from '@/lib/fabric/smartGuides';
 import { exportToPDF } from '@/lib/export/pdfExport';
 import { processWithLiveData } from '@/lib/fabric/dataInjector';
+import { serializeCanvasToBrochureTemplate, downloadJsonConfig } from '@/lib/export/jsonExport';
+
+// Global clipboard for cross-page copy-paste in this session
+let clipboardData: fabric.Object | null = null;
 
 export default function EditorPage() {
   const router = useRouter();
@@ -91,10 +95,49 @@ export default function EditorPage() {
                   c.renderAll();
               }
           }
+
+          if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+              const active = c.getActiveObject();
+              if (active) {
+                 active.clone((cloned: fabric.Object) => {
+                    clipboardData = cloned;
+                 });
+              }
+          }
+          
+          if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+              if (clipboardData) {
+                  clipboardData.clone((clonedObj: fabric.Object) => {
+                      c.discardActiveObject();
+                      clonedObj.set({
+                          left: clonedObj.left! + 10,
+                          top: clonedObj.top! + 10,
+                          evented: true,
+                      });
+                      
+                      if (clonedObj.type === 'activeSelection') {
+                          clonedObj.canvas = c;
+                          clonedObj.forEachObject((obj) => {
+                              c.add(obj);
+                          });
+                          clonedObj.setCoords();
+                      } else {
+                          // Preserve Custom Properties
+                          if ((clipboardData as any).dataBinding) (clonedObj as any).dataBinding = (clipboardData as any).dataBinding;
+                          if ((clipboardData as any).isImagePlaceholder) (clonedObj as any).isImagePlaceholder = (clipboardData as any).isImagePlaceholder;
+                          
+                          c.add(clonedObj);
+                      }
+                      
+                      clipboardData.top! += 10;
+                      clipboardData.left! += 10;
+                      c.setActiveObject(clonedObj);
+                      c.requestRenderAll();
+                  });
+              }
+          }
         };
         window.addEventListener('keydown', handleKeyDown);
-        
-        // Basic copy-paste handling placeholder (prompt mentioned simple shortcuts)
 
         newCanvases.push(c);
         newHistories.push(hist);
@@ -239,13 +282,115 @@ export default function EditorPage() {
     }
   };
 
+  const handleAddPage = () => {
+    const el = document.createElement('canvas');
+    el.width = 595; el.height = 842;
+    const c = new fabric.Canvas(el, { width: 595, height: 842, selection: true, preserveObjectStacking: true, backgroundColor: '#ffffff' });
+    initSmartGuides(c);
+    const hist = new CanvasHistory(c);
+    
+    // Quick key bind for newly added canvas
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target !== document.body && (e.target as HTMLElement).tagName !== 'CANVAS') return; 
+      
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+          const activeObjects = c.getActiveObjects();
+          if (activeObjects.length) {
+              activeObjects.forEach(obj => c.remove(obj));
+              c.discardActiveObject();
+              c.renderAll();
+          }
+      }
+      
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+          const active = c.getActiveObject();
+          if (active) {
+             active.clone((cloned: fabric.Object) => { clipboardData = cloned; });
+          }
+      }
+      
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+          if (clipboardData) {
+              clipboardData.clone((clonedObj: fabric.Object) => {
+                  c.discardActiveObject();
+                  clonedObj.set({ left: clonedObj.left! + 10, top: clonedObj.top! + 10, evented: true });
+                  if ((clipboardData as any).dataBinding) (clonedObj as any).dataBinding = (clipboardData as any).dataBinding;
+                  if ((clipboardData as any).isImagePlaceholder) (clonedObj as any).isImagePlaceholder = (clipboardData as any).isImagePlaceholder;
+                  c.add(clonedObj);
+                  clipboardData.top! += 10; clipboardData.left! += 10;
+                  c.setActiveObject(clonedObj);
+                  c.requestRenderAll();
+              });
+          }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    setCanvases(prev => [...prev, c]);
+    setHistories(prev => [...prev, hist]);
+    store.setPage(canvases.length + 1); // Jump to new page
+  };
+
+  const handleDeletePage = () => {
+    if (canvases.length <= 1) return;
+    const idx = store.currentPage - 1;
+    
+    // cleanup
+    canvases[idx].dispose();
+    histories[idx].dispose();
+
+    const newC = [...canvases];
+    const newH = [...histories];
+    newC.splice(idx, 1);
+    newH.splice(idx, 1);
+
+    setCanvases(newC);
+    setHistories(newH);
+    
+    // adjust page
+    if (store.currentPage > newC.length) {
+      store.setPage(newC.length);
+    }
+  };
+
+  const handleExportConfig = async () => {
+    const templateName = prompt("Enter a name for this customized Template:", store.propertyData.title + " Custom Template");
+    if (!templateName) return;
+
+    const template = serializeCanvasToBrochureTemplate(canvases, 'custom-' + Date.now(), templateName);
+    const configStr = JSON.stringify(template);
+
+    try {
+      const res = await fetch('/api/templates', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+            name: templateName,
+            description: "Custom template built from Main Editor",
+            configJson: configStr
+         })
+      });
+
+      if (res.ok) {
+         if (confirm("Template saved successfully to the database! Would you also like to download the raw JSON file as backup?")) {
+             downloadJsonConfig(template);
+         }
+      } else {
+         alert("Failed to save template to database.");
+      }
+    } catch(e) {
+      console.error(e);
+      alert("Error saving template.");
+    }
+  };
+
   const curIdx = store.currentPage - 1;
   const activeCanvas = canvases[curIdx] || null;
   const activeHistory = histories[curIdx] || null;
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-50 text-gray-900">
-      <TopToolbar canvas={activeCanvas} history={activeHistory} onPreview={runPreview} onDownload={runExport} />
+      <TopToolbar canvas={activeCanvas} history={activeHistory} onPreview={runPreview} onDownload={runExport} onExportConfig={handleExportConfig} />
       
       <div className="flex-1 flex overflow-hidden">
         <LeftPanel canvas={activeCanvas} />
@@ -284,7 +429,7 @@ export default function EditorPage() {
         <RightPanel canvas={activeCanvas} />
       </div>
 
-      <BottomBar />
+      <BottomBar totalPages={canvases.length} onAddPage={handleAddPage} onDeletePage={handleDeletePage} />
 
       {showPreview && (
         <PreviewModal 

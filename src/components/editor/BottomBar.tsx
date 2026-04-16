@@ -2,12 +2,16 @@
 
 import { useAppStore } from '@/lib/store';
 import { templates } from '@/lib/templates';
-import { Minus, Plus, Maximize2, Grid3X3, Magnet } from 'lucide-react';
+import { Minus, Plus, Maximize2, Grid3X3, Magnet, PlusCircle, Trash2 } from 'lucide-react';
 
-export default function BottomBar() {
+type BottomBarProps = {
+  totalPages?: number;
+  onAddPage?: () => void;
+  onDeletePage?: () => void;
+};
+
+export default function BottomBar({ totalPages = 1, onAddPage, onDeletePage }: BottomBarProps) {
   const store = useAppStore();
-  const template = templates.find(t => t.id === store.selectedTemplateId);
-  const totalPages = template ? template.pages.length : 1;
 
   const handleZoom = (delta: number) => {
     let z = store.zoom + delta;
@@ -30,16 +34,37 @@ export default function BottomBar() {
       </div>
 
       {/* Pages */}
-      <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-md overflow-x-auto max-w-[50vw]">
-        {Array.from({ length: totalPages }).map((_, i) => (
-          <button 
-            key={i}
-            onClick={() => store.setPage(i + 1)}
-            className={`px-3 py-1 text-xs rounded-sm font-medium transition-colors whitespace-nowrap ${store.currentPage === i + 1 ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            Page {i + 1}
-          </button>
-        ))}
+      <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-md overflow-x-auto max-w-[40vw]">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button 
+              key={i}
+              onClick={() => store.setPage(i + 1)}
+              className={`px-3 py-1 text-xs rounded-sm font-medium transition-colors whitespace-nowrap ${store.currentPage === i + 1 ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Page {i + 1}
+            </button>
+          ))}
+        </div>
+        
+        {onAddPage && (
+           <button 
+              onClick={onAddPage}
+              className="ml-2 flex items-center gap-1 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-xs font-medium transition-colors"
+           >
+              <PlusCircle size={14} /> Add Page
+           </button>
+        )}
+
+        {onDeletePage && totalPages > 1 && (
+           <button 
+             onClick={onDeletePage}
+             className="ml-1 p-1 text-red-500 hover:bg-red-50 hover:text-red-700 rounded transition-colors"
+             title="Delete Current Page"
+           >
+             <Trash2 size={14} />
+           </button>
+        )}
       </div>
 
       {/* Toggles */}
