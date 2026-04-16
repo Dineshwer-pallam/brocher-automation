@@ -45,6 +45,9 @@ export function replaceBindings(text: string, property: PropertyData): string {
   resolved = resolved.replace(/\{\{\s*company_website\s*\}\}/g, property.company.website || 'www.company.com');
   resolved = resolved.replace(/\{\{\s*address\s*\}\}/g, property.address || '123 Property Address');
 
+  // Convert markdown lists (- point or * point) to typography bullets
+  resolved = resolved.replace(/(^|\n)[\-\*]\s+/g, '$1• ');
+
   return resolved;
 }
 

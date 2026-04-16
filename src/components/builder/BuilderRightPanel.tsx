@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { fabric } from 'fabric';
-import { AlignLeft, AlignCenter, AlignRight, Bold, Type, Database } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, Bold, Type, Database, List } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { getPlaceholderDataURL } from './utils';
 
@@ -93,6 +93,29 @@ export default function BuilderRightPanel({ canvas, width, height }: { canvas: f
       canvas.requestRenderAll();
       setBgColor(val);
     }
+  };
+
+  const toggleBullets = () => {
+    if (!activeObj || !(activeObj instanceof fabric.Textbox || activeObj instanceof fabric.Text)) return;
+    const text = (activeObj as any).text || '';
+    const lines = text.split('\n');
+    
+    // Check if ALL non-empty lines already have bullets
+    const activeLines = lines.filter((l: string) => l.trim() !== '');
+    const isReadyAllBulleted = activeLines.length > 0 && activeLines.every((l: string) => l.trim().startsWith('•'));
+    
+    let newText = '';
+    if (isReadyAllBulleted) {
+        newText = lines.map((l: string) => l.replace(/^\s*•\s*/, '')).join('\n');
+    } else {
+        newText = lines.map((l: string) => {
+           if (!l.trim()) return l;
+           if (l.trim().startsWith('•')) return l; // preserve existing bullet
+           return `• ${l.trim()}`; // add bullet to naked line
+        }).join('\n');
+    }
+    
+    updateProp('text', newText);
   };
 
   if (!canvas) return <div className="w-72 bg-white border-l h-full" />;
@@ -214,6 +237,13 @@ export default function BuilderRightPanel({ canvas, width, height }: { canvas: f
                     className={`flex-1 border rounded flex items-center justify-center transition-colors ${(activeObj as fabric.Textbox).fontWeight === 'bold' ? 'bg-gray-200 border-gray-300 shadow-inner' : 'hover:bg-gray-50'}`}
                   >
                     <Bold size={14} />
+                  </button>
+                  <button 
+                    onClick={toggleBullets}
+                    className={`w-8 border rounded flex items-center justify-center transition-colors hover:bg-gray-50`}
+                    title="Toggle Bullet Points"
+                  >
+                    <List size={14} />
                   </button>
                   <div className="flex border rounded overflow-hidden">
                     {['left', 'center', 'right'].map((align) => {
