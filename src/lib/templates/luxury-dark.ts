@@ -30,7 +30,7 @@ export const luxuryDarkTemplate: BrochureTemplate = {
         { type: 'textbox', dataBinding: '{{agent_name}}', left: 140, top: 765, fill: '#ffffff', fontSize: 16, fontFamily: 'Playfair Display', fontWeight: 'bold' },
         { type: 'textbox', dataBinding: '{{agent_phone}} | {{agent_email}}', left: 140, top: 790, fill: '#aaaaaa', fontSize: 11, fontFamily: 'Inter' },
         { type: 'textbox', dataBinding: '{{company_name}}', left: 435, top: 745, fill: '#666680', fontSize: 9, fontFamily: 'Montserrat', fontWeight: 'bold', width: 120, textAlign: 'right' },
-        { type: 'image', dataBinding: '{{company_logo}}', left: 435, top: 760, width: 120, height: 50 }
+        { type: 'image', dataBinding: '/images/company_logo.png', left: 435, top: 760, width: 120, height: 50 }
       ]
     },
     {

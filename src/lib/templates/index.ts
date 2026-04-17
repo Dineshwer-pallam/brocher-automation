@@ -1,3 +1,4 @@
+import { jfTestTemplate } from './jf-test-template';
 import { luxuryDarkTemplate } from './luxury-dark';
 import { modernMinimalTemplate } from './modern-minimal';
 import { boldMagazineTemplate } from './bold-magazine';
@@ -6,6 +7,7 @@ import { compactProfessionalTemplate } from './compact-professional';
 import { jordanFishwickTemplate } from './jordan-fishwick';
 
 export const templates = [
+  jfTestTemplate,
   luxuryDarkTemplate,
   modernMinimalTemplate,
   boldMagazineTemplate,

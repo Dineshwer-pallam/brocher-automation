@@ -19,7 +19,7 @@ export const boldMagazineTemplate: BrochureTemplate = {
         { type: 'textbox', dataBinding: '{{bedrooms}} BD  |  {{bathrooms}} BA  |  {{area}}', left: 40, top: 640, fill: '#ffffff', fontSize: 16, fontFamily: 'Inter', fontWeight: 'bold' },
         
         { type: 'rect', left: 420, top: 620, width: 135, height: 130, fill: '#ffffff' },
-        { type: 'image', dataBinding: '{{company_logo}}', left: 430, top: 640, width: 110, height: 60 },
+        { type: 'image', dataBinding: '/images/company_logo.png', left: 430, top: 640, width: 110, height: 60 },
         { type: 'textbox', dataBinding: '{{company_name}}', left: 430, top: 710, width: 110, fill: '#000000', fontSize: 10, fontFamily: 'Inter', fontWeight: 'bold', textAlign: 'center' }
       ]
     },

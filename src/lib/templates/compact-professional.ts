@@ -10,7 +10,7 @@ export const compactProfessionalTemplate: BrochureTemplate = {
       background: '#ffffff',
       objects: [
         { type: 'rect', left: 0, top: 0, width: 595, height: 120, fill: '#0a2540' },
-        { type: 'image', dataBinding: '{{company_logo}}', left: 40, top: 35, width: 120, height: 50 },
+        { type: 'image', dataBinding: '/images/company_logo.png', left: 40, top: 35, width: 120, height: 50 },
         { type: 'textbox', dataBinding: '{{company_name}}', left: 430, top: 50, fill: '#ffffff', fontSize: 14, fontFamily: 'Roboto', fontWeight: 'bold', width: 125, textAlign: 'right' },
         
         { type: 'image', dataBinding: '{{hero_image}}', left: 40, top: 150, width: 515, height: 280 },
@@ -61,7 +61,7 @@ export const compactProfessionalTemplate: BrochureTemplate = {
         { type: 'textbox', dataBinding: 'Email: {{agent_email}}', left: 150, top: 720, fill: '#334155', fontSize: 12, fontFamily: 'Roboto' },
         
         { type: 'textbox', dataBinding: '{{company_name}}', left: 400, top: 650, fill: '#0f172a', fontSize: 12, fontFamily: 'Roboto', fontWeight: 'bold' },
-        { type: 'image', dataBinding: '{{company_logo}}', left: 400, top: 675, width: 120, height: 60 },
+        { type: 'image', dataBinding: '/images/company_logo.png', left: 400, top: 675, width: 120, height: 60 },
       ]
     }
   ]

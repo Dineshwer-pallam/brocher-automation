@@ -229,14 +229,23 @@ function BuilderCanvasInner() {
                     c.add(text);
                     resolve();
                  } else if (obj.type === 'image') {
-                    const dataUrl = getPlaceholderDataURL(obj.width || 200, obj.height || 150, obj.dataBinding || 'Image Placeholder');
-                    fabric.Image.fromURL(dataUrl, (img) => {
+                    const isDyn = typeof obj.dataBinding === 'string' && obj.dataBinding.startsWith('{{');
+                    const urlToLoad = isDyn ? getPlaceholderDataURL(obj.width || 200, obj.height || 150, obj.dataBinding || 'Image Placeholder') : obj.dataBinding;
+                    
+                    fabric.Image.fromURL(urlToLoad || getPlaceholderDataURL(obj.width || 200, obj.height || 150, 'Image'), (img) => {
                        img.set({ left: obj.left, top: obj.top, opacity: obj.opacity });
-                       (img as any).isImagePlaceholder = true;
+                       if (isDyn) (img as any).isImagePlaceholder = true;
                        if (obj.dataBinding) (img as any).dataBinding = obj.dataBinding;
                        c.add(img);
                        resolve();
                     });
+                 } else if (obj.type === 'group' && obj.fabricJson) {
+                    fabric.util.enlivenObjects([obj.fabricJson], (objs: any[]) => {
+                        if (objs && objs.length > 0) {
+                           c.add(objs[0]);
+                        }
+                        resolve();
+                    }, "fabric");
                  } else {
                     resolve();
                  }

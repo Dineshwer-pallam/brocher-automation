@@ -44,7 +44,7 @@ export const modernMinimalTemplate: BrochureTemplate = {
         { type: 'textbox', dataBinding: '{{agent_phone}}', left: 150, top: 680, fill: '#4b5563', fontSize: 14, fontFamily: 'Inter' },
         { type: 'textbox', dataBinding: '{{agent_email}}', left: 150, top: 700, fill: '#4b5563', fontSize: 14, fontFamily: 'Inter' },
         
-        { type: 'image', dataBinding: '{{company_logo}}', left: 450, top: 650, width: 100, height: 50 },
+        { type: 'image', dataBinding: '/images/company_logo.png', left: 450, top: 650, width: 100, height: 50 },
         { type: 'textbox', dataBinding: '{{company_name}}', left: 450, top: 710, fill: '#9ca3af', fontSize: 10, fontFamily: 'Inter', width: 100, textAlign: 'center' }
       ]
     }

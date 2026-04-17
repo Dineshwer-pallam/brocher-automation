@@ -23,7 +23,7 @@ export const warmElegantTemplate: BrochureTemplate = {
         
         { type: 'textbox', dataBinding: 'Discover unparalleled elegance in this curated estate, where classic architecture meets modern sophistication.', left: 70, top: 675, width: 455, fill: '#8b7a6d', fontSize: 12, fontFamily: 'Lora', textAlign: 'center', fontStyle: 'italic', lineHeight: 1.6 },
         
-        { type: 'image', dataBinding: '{{company_logo}}', left: 247.5, top: 720, width: 100, height: 45 },
+        { type: 'image', dataBinding: '/images/company_logo.png', left: 247.5, top: 720, width: 100, height: 45 },
         { type: 'textbox', dataBinding: '{{company_name}}', left: 40, top: 775, width: 515, fill: '#cda87c', fontSize: 9, fontFamily: 'Lora', textAlign: 'center', fontWeight: 'bold' }
       ]
     },

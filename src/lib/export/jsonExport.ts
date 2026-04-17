@@ -23,7 +23,7 @@ export function serializeCanvasToBrochureTemplate(
       if ((obj as any).isGuide) return;
 
       const basePropStr = (obj as any).dataBinding;
-      let type: 'text' | 'image' | 'rect' | 'circle' | 'line' | 'textbox' = 'rect';
+      let type: 'text' | 'image' | 'rect' | 'circle' | 'line' | 'textbox' | 'group' = 'rect';
       
       const to = {
         left: obj.left || 0,
@@ -58,9 +58,16 @@ export function serializeCanvasToBrochureTemplate(
           to.dataBinding = txt.text; // Static text
         }
       } 
-      else if ((obj as any).isImagePlaceholder) {
+      else if (obj.type === 'image') {
         type = 'image';
-      } 
+        if (!to.dataBinding) {
+           to.dataBinding = (obj as any).dataBinding || (obj as fabric.Image).getSrc?.() || '';
+        }
+      }
+      else if (obj.type === 'group' || obj.type === 'path') {
+        type = 'group';
+        to.fabricJson = obj.toJSON(['dataBinding', 'isImagePlaceholder', 'isClipPath']);
+      }
       else if (obj.type === 'rect') {
         type = 'rect';
         to.rx = (obj as fabric.Rect).rx;

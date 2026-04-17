@@ -26,6 +26,19 @@ model Property {
   // Use JSON string for storing arrays in SQLite prototyping
   images      String   @default("[]")
   
+  buildingInfo String?
+  entranceHall String?
+  kitchenLounge String?
+  bedroomOne   String?
+  enSuite      String?
+  bedroomTwo   String?
+  bathroomDetails String?
+  externally   String?
+  additionalInfo String?
+  agentsNotes  String?
+  disclaimer   String?
+  viewingArrangements String?
+
   agentName   String?
   agentPhone  String?
   agentEmail  String?

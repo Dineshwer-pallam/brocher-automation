@@ -155,6 +155,16 @@ export default async function renderTemplate(template: BrochureTemplate, propert
         );
         renderedObjects.push(lineObj);
       }
+      else if (obj.type === 'group' && obj.fabricJson) {
+         await new Promise<void>((resolve) => {
+             fabric.util.enlivenObjects([obj.fabricJson], (objs: any[]) => {
+                 if (objs && objs.length > 0) {
+                     renderedObjects.push(objs[0]);
+                 }
+                 resolve();
+             }, "fabric");
+         });
+      }
     }
 
     renderedPages.push({

@@ -28,7 +28,7 @@ export const jordanFishwickTemplate: BrochureTemplate = {
         },
         {
           type: 'image',
-          dataBinding: '{{company_logo}}',
+          dataBinding: '/images/company_logo.png',
           left: 450,
           top: 740,
           width: 120,
@@ -170,7 +170,7 @@ export const jordanFishwickTemplate: BrochureTemplate = {
         { type: 'rect', left: 20, top: 50, width: 555, height: 680, fill: '#ffffff' },
         { type: 'image', dataBinding: '{{floorplan}}', left: 77.5, top: 100, width: 440, height: 440 },
         { type: 'rect', left: 0, top: 730, width: 595, height: 112, fill: '#003882' },
-        { type: 'image', dataBinding: '{{company_logo}}', left: 30, top: 740, width: 100, height: 80 },
+        { type: 'image', dataBinding: '/images/company_logo.png', left: 30, top: 740, width: 100, height: 80 },
         { type: 'textbox', dataBinding: '{{company_name}}', left: 340, top: 750, width: 230, fontSize: 12, fill: '#ffffff', textAlign: 'right' },
         { type: 'textbox', dataBinding: 'T: {{agent_phone}}', left: 340, top: 770, width: 230, fontSize: 16, fontWeight: 'bold', fill: '#ffffff', textAlign: 'right' },
         { type: 'textbox', dataBinding: '{{company_website}}', left: 340, top: 790, width: 230, fontSize: 12, fill: '#ffffff', textAlign: 'right' }
