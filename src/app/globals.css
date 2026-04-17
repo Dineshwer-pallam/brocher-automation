@@ -2,7 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;700&family=Lora:wght@400;500;600&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap');
+
 :root {
+  --font-playfair: 'Playfair Display', serif;
+  --font-montserrat: 'Montserrat', sans-serif;
+  --font-bebas-neue: 'Bebas Neue', sans-serif;
+  --font-cormorant: 'Cormorant Garamond', serif;
+  --font-work-sans: 'Work Sans', sans-serif;
+  --font-dm-sans: 'DM Sans', sans-serif;
+  --font-lora: 'Lora', serif;
+  --font-poppins: 'Poppins', sans-serif;
+
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 245, 245, 245;
   --background-end-rgb: 245, 245, 245;
