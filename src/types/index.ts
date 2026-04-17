@@ -83,5 +83,7 @@ export interface BrochureTemplate {
   id: string;
   name: string;
   mood: string;
+  width?: number;
+  height?: number;
   pages: TemplatePage[];
 }

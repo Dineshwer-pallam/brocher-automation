@@ -161,6 +161,11 @@ function BuilderCanvasInner() {
 
       if (presetTemplate) {
         try {
+          if (presetTemplate.width) w = presetTemplate.width;
+          if (presetTemplate.height) h = presetTemplate.height;
+          setWidth(w);
+          setHeight(h);
+
           const renderedPages = await renderTemplate(presetTemplate, store.propertyData);
           
           for (let i = 0; i < renderedPages.length; i++) {
@@ -181,6 +186,11 @@ function BuilderCanvasInner() {
       } else if (jsonStr) {
         try {
           const template = JSON.parse(jsonStr);
+          if (template.width) w = template.width;
+          if (template.height) h = template.height;
+          setWidth(w);
+          setHeight(h);
+
           const promises = template.pages.map(async (page: any) => {
             const { c, hist } = createBlankCanvas();
             c.backgroundColor = page.background || '#ffffff';

@@ -94,6 +94,8 @@ export function serializeCanvasToBrochureTemplate(
     id,
     name,
     mood: 'Custom Created',
+    width: canvases[0]?.width || 595,
+    height: canvases[0]?.height || 842,
     pages
   };
 }

@@ -69,6 +69,14 @@ function SortableImageItem({ id, url, onRemove, index }: { id: string; url: stri
 }
 
 export default function CreatePropertyPage() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+      <CreatePropertyContent />
+    </React.Suspense>
+  );
+}
+
+function CreatePropertyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isDemo = searchParams.get('demo') === 'true';
