@@ -17,6 +17,7 @@ import { getPlaceholderDataURL } from '@/components/builder/utils';
 import renderTemplate from '@/lib/fabric/templateRenderer';
 import { exportToPDF } from '@/lib/export/pdfExport';
 import { templates } from '@/lib/templates';
+import VariableAutocomplete from '@/components/builder/VariableAutocomplete';
 
 // Global clipboard for cross-page copy-paste in this session
 let clipboardData: fabric.Object | null = null;
@@ -49,6 +50,15 @@ function BuilderCanvasInner() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [dbProperties, setDbProperties] = useState<any[]>([]);
   const [selectedPreviewPropertyId, setSelectedPreviewPropertyId] = useState<string>('');
+  
+  // Autocomplete State
+  const [autocompleteState, setAutocompleteState] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    query: string;
+    targetObj: fabric.Textbox | null;
+  }>({ visible: false, x: 0, y: 0, query: '', targetObj: null });
   
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const mountRootRef = useRef<HTMLDivElement>(null);
@@ -311,6 +321,90 @@ function BuilderCanvasInner() {
   const curIdx = store.currentPage - 1;
   const activeCanvas = canvases[curIdx] || null;
   const activeHistory = histories[curIdx] || null;
+
+  useEffect(() => {
+    if (!activeCanvas) return;
+
+    const handleTextChanged = (e: fabric.IEvent) => {
+      const obj = e.target as fabric.Textbox;
+      if (!obj || !obj.isEditing || obj.type !== 'textbox' && obj.type !== 'i-text' && obj.type !== 'text') return;
+      
+      const text = obj.text || '';
+      const cursorLocation = obj.selectionStart || 0;
+      const textBeforeCursor = text.substring(0, cursorLocation);
+      
+      // Match {query or {{query at the end of the cursor
+      const match = textBeforeCursor.match(/\{([a-zA-Z0-9_]*)$/);
+      
+      if (match) {
+        const boundingRect = obj.getBoundingRect(true, true);
+        const z = store.zoom; // Get zoom to normalize if placed outside, but if rendering inside relative container, coords are unzoomed! Wait, getBoundingRect is relative to canvas (unzoomed logical pixels).
+        
+        let x = boundingRect.left;
+        let y = boundingRect.top + boundingRect.height;
+        
+        setAutocompleteState({
+          visible: true,
+          x: x,
+          y: y,
+          query: match[1],
+          targetObj: obj,
+        });
+      } else {
+        setAutocompleteState(prev => prev.visible ? { ...prev, visible: false } : prev);
+      }
+    };
+
+    const handleEditingExited = () => {
+      setAutocompleteState(prev => ({ ...prev, visible: false }));
+    };
+
+    activeCanvas.on('text:changed', handleTextChanged);
+    activeCanvas.on('editing:exited', handleEditingExited);
+    activeCanvas.on('deselected', handleEditingExited);
+
+    return () => {
+      activeCanvas.off('text:changed', handleTextChanged);
+      activeCanvas.off('editing:exited', handleEditingExited);
+      activeCanvas.off('deselected', handleEditingExited);
+    };
+  }, [activeCanvas, store.zoom]);
+
+  const handleVariableSelect = (variableId: string) => {
+    const { targetObj } = autocompleteState;
+    if (!targetObj || !targetObj.isEditing) return;
+
+    const originalText = targetObj.text || '';
+    const cursorLocation = targetObj.selectionStart || 0;
+    
+    const textBeforeCursor = originalText.substring(0, cursorLocation);
+    const textAfterCursor = originalText.substring(cursorLocation);
+    
+    // Replace the trailing '{query' or '{{query' with '{{variableId}}'
+    const replacedBeforeCursor = textBeforeCursor.replace(/\{{1,2}([a-zA-Z0-9_]*)$/, `{{${variableId}}}`);
+    
+    const newText = replacedBeforeCursor + textAfterCursor;
+    targetObj.set({ text: newText });
+    
+    // Move cursor to after the injected variable
+    const newCursorLocation = replacedBeforeCursor.length;
+    targetObj.selectionStart = newCursorLocation;
+    targetObj.selectionEnd = newCursorLocation;
+    
+    targetObj.initDimensions();
+    targetObj.setCoords();
+    targetObj.dirty = true;
+    (targetObj as any).hiddenTextarea.value = newText;
+    (targetObj as any).hiddenTextarea.selectionStart = newCursorLocation;
+    (targetObj as any).hiddenTextarea.selectionEnd = newCursorLocation;
+    
+    activeCanvas?.requestRenderAll();
+    
+    // Focus canvas to keep keyboard events flowing cleanly? 
+    // Usually Fabric's hiddenTextarea handles it as long as obj is active
+    
+    setAutocompleteState(prev => ({ ...prev, visible: false }));
+  };
 
   const handleAddPage = () => {
     const el = document.createElement('canvas');
@@ -582,6 +676,28 @@ function BuilderCanvasInner() {
                       backgroundSize: '20px 20px' 
                    }}
                 ></div>
+             )}
+             
+             {autocompleteState.visible && (
+                <div 
+                  className="absolute" 
+                  style={{ 
+                     left: autocompleteState.x, 
+                     top: autocompleteState.y,
+                     // We may un-zoom it slightly so the UI doesn't look tiny if canvas is zoomed way out
+                     transform: `scale(${1 / store.zoom})`,
+                     transformOrigin: 'top left',
+                     zIndex: 9999 
+                  }}
+                >
+                  <VariableAutocomplete
+                     x={0}
+                     y={0}
+                     query={autocompleteState.query}
+                     onSelect={handleVariableSelect}
+                     onClose={() => setAutocompleteState(prev => ({ ...prev, visible: false }))}
+                  />
+                </div>
              )}
           </div>
         </div>
