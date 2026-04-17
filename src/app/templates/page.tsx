@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
 import { templates } from '@/lib/templates';
 import renderTemplate from '@/lib/fabric/templateRenderer';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { exportToPDF } from '@/lib/export/pdfExport';
+import { processWithLiveData } from '@/lib/fabric/dataInjector';
+import { ArrowLeft, CheckCircle2, Download, Loader2 } from 'lucide-react';
 import { fabric } from 'fabric';
 
 export default function TemplatesPage() {
@@ -14,6 +16,7 @@ export default function TemplatesPage() {
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [allTemplates, setAllTemplates] = useState<any[]>([]);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -68,8 +71,10 @@ export default function TemplatesPage() {
             
             fCanvas.renderAll();
             
-            // generate image data
-            newPreviews[t.id] = fCanvas.toDataURL({ format: 'png', quality: 0.8, multiplier: 0.5 });
+            // generate image data wrapped in data injector
+            await processWithLiveData([fCanvas], store.propertyData, async () => {
+              newPreviews[t.id] = fCanvas.toDataURL({ format: 'png', quality: 0.8, multiplier: 0.5 });
+            });
           }
         } catch (err) {
           console.error(`Failed preview for ${t.id}`, err);
@@ -90,6 +95,58 @@ export default function TemplatesPage() {
     }
   };
 
+  const handleDirectDownload = async () => {
+    if (!store.selectedTemplateId) return;
+    const selectedTemplate = allTemplates.find(t => t.id === store.selectedTemplateId);
+    if (!selectedTemplate) return;
+
+    setIsDownloadingPdf(true);
+    try {
+      // 1. Render template to virtual page structures
+      const renderedPages = await renderTemplate(selectedTemplate, store.propertyData);
+      
+      const isLandscape = selectedTemplate.width && selectedTemplate.height 
+        ? selectedTemplate.width > selectedTemplate.height
+        : (selectedTemplate.config?.orientation === 'landscape');
+        
+      const width = selectedTemplate.width || (isLandscape ? 842 : 595);
+      const height = selectedTemplate.height || (isLandscape ? 595 : 842);
+      
+      const canvases: fabric.Canvas[] = [];
+      const canvasElements: HTMLCanvasElement[] = [];
+
+      for (const page of renderedPages) {
+        const canvasEl = document.createElement('canvas');
+        canvasEl.width = width;
+        canvasEl.height = height;
+        canvasElements.push(canvasEl);
+        
+        const fCanvas = new fabric.Canvas(canvasEl);
+        fCanvas.backgroundColor = page.background;
+        
+        for (const obj of page.objects) {
+          fCanvas.add(obj);
+        }
+        fCanvas.renderAll();
+        canvases.push(fCanvas);
+      }
+
+      // 2. Export offline canvases to PDF with LIVE DATA
+      const filename = `${store.propertyData.title?.replace(/\s+/g, '-') || 'brochure'}.pdf`;
+      await processWithLiveData(canvases, store.propertyData, async () => {
+        await exportToPDF(canvases, filename, { width, height });
+      });
+      
+      // Cleanup
+      canvases.forEach(c => c.dispose());
+    } catch (err) {
+      console.error("Failed to directly download PDF", err);
+      alert("Failed to generate PDF. Please try opening in the editor instead.");
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b sticky top-0 z-10">
@@ -107,13 +164,23 @@ export default function TemplatesPage() {
               <p className="text-xs text-gray-500 hidden sm:block">Pick a design style for your property brochure</p>
             </div>
           </div>
-          <button
-            onClick={handleOpenEditor}
-            disabled={!store.selectedTemplateId}
-            className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          >
-            Open in Editor &rarr;
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDirectDownload}
+              disabled={!store.selectedTemplateId || isDownloadingPdf}
+              className="flex items-center gap-2 rounded-md bg-white border border-gray-300 px-6 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isDownloadingPdf ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              {isDownloadingPdf ? 'Generating...' : 'Download PDF'}
+            </button>
+            <button
+              onClick={handleOpenEditor}
+              disabled={!store.selectedTemplateId || isDownloadingPdf}
+              className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              Open in Editor &rarr;
+            </button>
+          </div>
         </div>
       </header>
 
