@@ -1,9 +1,11 @@
 import { PrismaClient } from '@prisma/client'
+import { templates } from '../src/lib/templates/index';
 
 const prisma = new PrismaClient()
 
 async function main() {
   await prisma.property.deleteMany({});
+  await prisma.template.deleteMany({});
   
   const pool = [
     "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
@@ -168,8 +170,23 @@ async function main() {
       data: property
     })
   }
+  
+  console.log(`Seeded ${properties.length} properties.`);
 
-  console.log("Database seeded successfully with 5 fully populated dummy properties!");
+  // Seed sample templates mapped to database
+  for (const template of templates) {
+    await prisma.template.create({
+      data: {
+        id: template.id,
+        name: template.name,
+        description: template.mood || "Preset Template",
+        configJson: JSON.stringify(template)
+      }
+    });
+  }
+
+  console.log(`Seeded ${templates.length} templates.`);
+  console.log("Database seeded successfully with all sample data!");
 }
 
 main()
